@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Languages, RotateCcw } from 'lucide-react';
+import { Moon, Sun, RotateCcw } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 import { useEvaluationStore } from '../store/useEvaluationStore';
+import { FlagIcon } from './FlagIcon';
 
 export const Header = () => {
   const { t, i18n } = useTranslation();
@@ -50,7 +51,7 @@ export const Header = () => {
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
               aria-label={t('common.language')}
             >
-              <Languages className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <FlagIcon variant={i18n.language === 'ar' ? 'uk' : 'eg'} />
             </button>
 
             <button

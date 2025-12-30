@@ -150,11 +150,19 @@ export interface StartSessionResponse {
   courses: SessionCourse[];
 }
 
+export interface SavedAnswerData {
+  question_id: number;
+  yes_no_value?: boolean;
+  rating_value?: number;
+  text_value?: string;
+}
+
 export interface GetSessionResponse {
   session_id: string;
-  status: 'draft' | 'completed';
+  status: 'draft' | 'in_progress' | 'completed';
   department: string;
   regulation_id: number | null;
   is_parallel: boolean;
   courses: SessionCourse[];
+  saved_answers?: Record<string, Record<number, SavedAnswerData>>;
 }

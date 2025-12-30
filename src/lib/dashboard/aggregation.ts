@@ -10,7 +10,6 @@ import { format, startOfWeek } from 'date-fns';
 
 export function calculateKPIMetrics(
   answers: EvaluationAnswer[],
-  minResponses: number,
   targetScore: number = 4.0
 ): KPIMetrics {
   if (answers.length === 0) {
@@ -46,11 +45,6 @@ export function calculateKPIMetrics(
   const belowTargetPercent =
     (belowTarget.length / evaluationAverages.length) * 100;
 
-  const professorMetrics = calculateProfessorMetrics(answers, minResponses);
-  const lowSampleCount = professorMetrics.filter(
-    (p) => p.responsesCount < minResponses
-  ).length;
-
   return {
     overallScore,
     submittedForms: evaluationIds.size,
@@ -59,7 +53,7 @@ export function calculateKPIMetrics(
     coursesEvaluated: courseIds.size,
     dispersion,
     belowTargetPercent,
-    lowSampleCount,
+    lowSampleCount: 0,
   };
 }
 
@@ -81,8 +75,7 @@ export function calculatePerEvaluationAverages(
 }
 
 export function calculateProfessorMetrics(
-  answers: EvaluationAnswer[],
-  _minResponses: number
+  answers: EvaluationAnswer[]
 ): ProfessorMetrics[] {
   const professorGroups = new Map<
     string,

@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
-import { format, subDays } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import {
   TopBar,
   FilterBar,
@@ -41,12 +41,7 @@ export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { formatDecimal, formatInteger, formatDate, isRTL } = useLocaleFormatting();
 
-  const [filters, setFilters] = useState<FilterParams>({
-    startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
-    endDate: format(new Date(), 'yyyy-MM-dd'),
-    minResponses: 10,
-    includeLowSample: false,
-  });
+  const [filters, setFilters] = useState<FilterParams>({});
 
   const [selectedProfessorId, setSelectedProfessorId] = useState<string | null>(
     null
@@ -67,6 +62,16 @@ export function DashboardPage() {
   const { data: semesters = [], isLoading: semestersLoading } =
     useDashboardSemesters();
 
+  // Set current semester as default when semesters are loaded
+  useEffect(() => {
+    if (semesters.length > 0 && !filters.semesterIds?.length) {
+      const currentSemester = semesters.find((s) => s.is_current);
+      if (currentSemester) {
+        setFilters((prev) => ({ ...prev, semesterIds: [currentSemester.id] }));
+      }
+    }
+  }, [semesters, filters.semesterIds?.length]);
+
   const isLoading =
     departmentsLoading ||
     coursesLoading ||
@@ -76,13 +81,13 @@ export function DashboardPage() {
     semestersLoading;
 
   const kpiMetrics = useMemo(
-    () => calculateKPIMetrics(answers, filters.minResponses || 10),
-    [answers, filters.minResponses]
+    () => calculateKPIMetrics(answers),
+    [answers]
   );
 
   const professorMetrics = useMemo(
-    () => calculateProfessorMetrics(answers, filters.minResponses || 10),
-    [answers, filters.minResponses]
+    () => calculateProfessorMetrics(answers),
+    [answers]
   );
 
   const courseMetrics = useMemo(() => calculateCourseMetrics(answers), [answers]);
@@ -215,14 +220,12 @@ export function DashboardPage() {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() =>
+                onClick={() => {
+                  const currentSemester = semesters.find((s) => s.is_current);
                   setFilters({
-                    startDate: format(subDays(new Date(), 90), 'yyyy-MM-dd'),
-                    endDate: format(new Date(), 'yyyy-MM-dd'),
-                    minResponses: 10,
-                    includeLowSample: false,
-                  })
-                }
+                    semesterIds: currentSemester ? [currentSemester.id] : [],
+                  });
+                }}
               >
                 {t('common.resetFilters')}
               </Button>
@@ -245,8 +248,6 @@ export function DashboardPage() {
               <div className="lg:col-span-2">
                 <ProfessorLeaderboard
                   professors={professorMetrics}
-                  minResponses={filters.minResponses || 10}
-                  includeLowSample={filters.includeLowSample || false}
                   onSelectProfessor={setSelectedProfessorId}
                 />
               </div>

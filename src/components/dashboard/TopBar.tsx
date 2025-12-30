@@ -1,8 +1,9 @@
-import { Moon, Sun, Globe } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { useLocaleFormatting } from '@/lib/hooks/useLocaleFormatting';
+import { FlagIcon } from '../FlagIcon';
 
 interface TopBarProps {
   lastUpdated?: Date;
@@ -36,8 +37,9 @@ export function TopBar({ lastUpdated }: TopBarProps) {
             size="icon"
             onClick={toggleLanguage}
             className="transition-transform hover:scale-105"
+            aria-label={t('common.language')}
           >
-            <Globe className="h-5 w-5" />
+            <FlagIcon variant={i18n.language === 'ar' ? 'uk' : 'eg'} />
           </Button>
           <Button
             variant="ghost"

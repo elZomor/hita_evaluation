@@ -28,6 +28,7 @@ interface EvaluationState {
     questionId: number,
     answer: Answer
   ) => void;
+  setAnswers: (answers: AnswerMap) => void;
   getAnswersForProfessor: (courseId: number, professorId: number) => Answer[];
   resetAll: () => void;
 }
@@ -94,6 +95,8 @@ export const useEvaluationStore = create<EvaluationState>()(
             },
           };
         }),
+
+      setAnswers: (answers) => set({ answers }),
 
       getAnswersForProfessor: (courseId, professorId) => {
         const state = get();

@@ -241,11 +241,28 @@ export function FilterBar({
     }, []);
   }, [professors, language]);
 
+  const semesterOptions = useMemo<Option[]>(() => {
+    return semesters.map((semester) => ({
+      value: semester.id,
+      label: `${semester.year} - ${semester.type_display}${semester.is_current ? ` (${t('dashboard.current')})` : ''}`,
+    }));
+  }, [semesters, t]);
+
   return (
     <Card className="p-4">
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Temporarily hide semester filter */}
+          <DropdownFilter
+            label={t('dashboard.semester')}
+            options={semesterOptions}
+            selectedValues={filters.semesterIds || []}
+            onChange={(values) => updateFilter('semesterIds', values)}
+            placeholderLabel={t('common.all')}
+            searchPlaceholder={t('common.search')}
+            disabled={semesterOptions.length === 0}
+            emptyLabel={t('common.noData')}
+          />
+
           <DropdownFilter
             label={t('dashboard.department')}
             options={departmentOptions}

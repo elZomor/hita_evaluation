@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Search, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle, ArrowUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiClient } from '../lib/api/client';
 import { useEvaluationStore } from '../store/useEvaluationStore';
@@ -137,6 +137,10 @@ export const SelectPage = () => {
       regulation_id: selectedRegulationId,
       is_parallel: isParallel,
     });
+  };
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (isCheckingSession || loadingDepts || loadingRegulations) {
@@ -328,6 +332,14 @@ export const SelectPage = () => {
           </div>
         </>
       )}
+      <button
+        type="button"
+        onClick={handleScrollToTop}
+        className="fixed bottom-6 end-6 inline-flex items-center gap-2 px-4 py-3 rounded-full bg-amber-600 text-white shadow-lg hover:bg-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-300 dark:focus:ring-amber-800 transition-colors"
+      >
+        <ArrowUp className="w-5 h-5" />
+        <span className="font-semibold">{t('select.scrollToTop')}</span>
+      </button>
     </motion.div>
   );
 };

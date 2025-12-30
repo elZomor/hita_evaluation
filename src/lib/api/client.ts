@@ -109,4 +109,19 @@ export const apiClient = {
     const result: ApiResponse<SubmitAnswersResponse> = await response.json();
     return result.data;
   },
+
+  saveAnswers: async (payload: SubmitAnswersRequest): Promise<SubmitAnswersResponse> => {
+    const response = await fetch(`${API_BASE_URL}/hita_evaluation/sessions/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to save answers');
+    }
+    const result: ApiResponse<SubmitAnswersResponse> = await response.json();
+    return result.data;
+  },
 };

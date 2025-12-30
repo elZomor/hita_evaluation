@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle, ChevronDown, Link, Check, LayoutList, Users } from 'lucide-react';
+import { CheckCircle, ChevronDown, Link, Check, LayoutList, Users, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '../lib/api/client';
 import { useEvaluationStore } from '../store/useEvaluationStore';
@@ -19,6 +19,7 @@ export const EvaluatePage = () => {
   const sessionData = useEvaluationStore((state) => state.sessionData);
   const answers = useEvaluationStore((state) => state.answers);
   const setAnswer = useEvaluationStore((state) => state.setAnswer);
+  const setAnswers = useEvaluationStore((state) => state.setAnswers);
   const setSessionData = useEvaluationStore((state) => state.setSessionData);
   const resetAll = useEvaluationStore((state) => state.resetAll);
 
@@ -27,12 +28,14 @@ export const EvaluatePage = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'subject' | 'category'>('subject');
+  const [showSaved, setShowSaved] = useState(false);
 
-  // Fetch session data if not in store (resume scenario)
+  // Fetch session data from server (always fetch to get saved answers)
   const { data: fetchedSession, isLoading: loadingSession, isError } = useQuery({
     queryKey: ['session', sessionId],
     queryFn: () => apiClient.getSession(sessionId!),
-    enabled: !!sessionId && (!sessionData || sessionData.session_id !== sessionId),
+    enabled: !!sessionId,
+    staleTime: 0, // Always refetch to get latest saved answers
   });
 
   // Handle fetched session data
@@ -43,9 +46,40 @@ export const EvaluatePage = () => {
         setShowAlreadySubmitted(true);
       } else {
         setSessionData(fetchedSession);
+
+        // Restore saved answers from server (overwrites local state)
+        if (fetchedSession.saved_answers) {
+          const restoredAnswers: Record<string, Record<string, Answer>> = {};
+
+          for (const [key, questionAnswers] of Object.entries(fetchedSession.saved_answers)) {
+            restoredAnswers[key] = {};
+            for (const [questionId, answerData] of Object.entries(questionAnswers)) {
+              const answer: Answer = {
+                questionId: String(answerData.question_id),
+              };
+
+              if (answerData.yes_no_value !== undefined) {
+                answer.ratingValue = (answerData.yes_no_value ? 1 : 0) as 1 | 2 | 3 | 4 | 5;
+              } else if (answerData.rating_value !== undefined) {
+                answer.ratingValue = answerData.rating_value as 1 | 2 | 3 | 4 | 5;
+              }
+
+              if (answerData.text_value) {
+                answer.textValue = answerData.text_value;
+              }
+
+              restoredAnswers[key][questionId] = answer;
+            }
+          }
+
+          // Always set answers from server (even if empty, to clear stale local data)
+          if (Object.keys(restoredAnswers).length > 0) {
+            setAnswers(restoredAnswers);
+          }
+        }
       }
     }
-  }, [fetchedSession, setSessionData]);
+  }, [fetchedSession, setSessionData, setAnswers]);
 
   // Handle fetch error
   useEffect(() => {
@@ -191,21 +225,10 @@ export const EvaluatePage = () => {
     setAnswer(courseId, professorId, questionId, answer);
   };
 
-  const submitMutation = useMutation({
-    mutationFn: apiClient.submitAnswers,
-    onSuccess: () => {
-      setShowSuccess(true);
-      setTimeout(() => {
-        resetAll();
-        navigate('/');
-      }, 2000);
-    },
-  });
+  // Build payload for save/submit
+  const buildPayload = (): SubmitAnswersRequest | null => {
+    if (!sessionData) return null;
 
-  const handleSubmit = () => {
-    if (!canSubmit || !sessionData) return;
-
-    // Build submission payload in backend format
     const courses: SubmitCourseAnswers[] = sessionData.courses.map((course) => ({
       course_id: course.course_id,
       professors: course.professors.map((professor) => {
@@ -235,12 +258,45 @@ export const EvaluatePage = () => {
       }),
     }));
 
-    const payload: SubmitAnswersRequest = {
+    return {
       session_id: sessionData.session_id,
       courses,
     };
+  };
 
-    submitMutation.mutate(payload);
+  const submitMutation = useMutation({
+    mutationFn: apiClient.submitAnswers,
+    onSuccess: () => {
+      setShowSuccess(true);
+      setTimeout(() => {
+        resetAll();
+        navigate('/');
+      }, 2000);
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: apiClient.saveAnswers,
+    onSuccess: () => {
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 3000);
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!canSubmit || !sessionData) return;
+    const payload = buildPayload();
+    if (payload) {
+      submitMutation.mutate(payload);
+    }
+  };
+
+  const handleSave = () => {
+    if (!sessionData) return;
+    const payload = buildPayload();
+    if (payload) {
+      saveMutation.mutate(payload);
+    }
   };
 
   if (showSuccess) {
@@ -498,9 +554,9 @@ export const EvaluatePage = () => {
                 <AnimatePresence>
                   {isCategoryExpanded && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
                     >
                       <div className="p-4 space-y-4">
@@ -524,9 +580,9 @@ export const EvaluatePage = () => {
                               className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                             >
                               {/* Question Header - Accordion */}
-                              <button
+                              <div
                                 onClick={() => toggleExpanded(questionKey)}
-                                className={`sticky top-[4.5rem] z-30 w-full px-4 py-3 flex items-center justify-between text-start transition-colors rounded-t-xl shadow-md border-b ${
+                                className={`sticky top-[4.5rem] z-30 w-full px-4 py-3 flex items-center justify-between text-start transition-colors rounded-t-xl shadow-lg border-b cursor-pointer ${
                                   isQuestionComplete
                                     ? 'bg-green-100 dark:bg-green-800 border-green-200 dark:border-green-700'
                                     : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
@@ -559,15 +615,15 @@ export const EvaluatePage = () => {
                                     className={`w-4 h-4 text-gray-500 transition-transform ${isQuestionExpanded ? 'rotate-180' : ''}`}
                                   />
                                 </div>
-                              </button>
+                              </div>
 
                               {/* Question Content - Professor Answers */}
                               <AnimatePresence>
                                 {isQuestionExpanded && (
                                   <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
                                     transition={{ duration: 0.2 }}
                                   >
                                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -677,10 +733,33 @@ export const EvaluatePage = () => {
         </div>
       )}
 
-      <div className="flex justify-end pt-6">
+      {/* Save Success Message */}
+      <AnimatePresence>
+        {showSaved && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-lg flex items-center gap-2"
+          >
+            <Check className="w-5 h-5" />
+            {t('evaluate.saveSuccess')}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex justify-end gap-4 pt-6">
+        <button
+          onClick={handleSave}
+          disabled={saveMutation.isPending || submitMutation.isPending}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-950"
+        >
+          <Save className="w-5 h-5" />
+          {saveMutation.isPending ? t('common.loading') : t('evaluate.saveProgress')}
+        </button>
         <button
           onClick={handleSubmit}
-          disabled={!canSubmit || submitMutation.isPending}
+          disabled={!canSubmit || submitMutation.isPending || saveMutation.isPending}
           className="px-8 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-950"
         >
           {submitMutation.isPending ? t('common.loading') : t('evaluate.submitEvaluation')}
@@ -871,9 +950,9 @@ const ProfessorAccordion = ({
                       {isCategoryExpanded && (
                         <motion.div
                           key={categoryName}
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
                           className="space-y-5 w-full px-4 pb-4"
                         >
@@ -891,7 +970,11 @@ const ProfessorAccordion = ({
                                   isLast ? 'pb-2' : 'pb-5'
                                 } border-gray-200 dark:border-gray-700`}
                               >
-                                <div className="w-full">
+                                <div className={`sticky top-[10.5rem] z-10 w-full py-2 -mt-2 shadow-sm ${
+                                  isAnswered
+                                    ? 'bg-green-100 dark:bg-green-800'
+                                    : 'bg-slate-100 dark:bg-slate-800'
+                                }`}>
                                   <label className={`block text-sm font-medium w-full ${
                                     isAnswered
                                       ? 'text-green-800 dark:text-green-300'
