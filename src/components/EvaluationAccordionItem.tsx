@@ -91,16 +91,16 @@ export const EvaluationAccordionItem = ({ assignment }: EvaluationAccordionItemP
         aria-expanded={isOpen}
         className="w-full px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500"
       >
-        <div className="flex items-center gap-4 flex-1 min-w-0 text-start">
-          <StatusIcon className={`w-6 h-6 flex-shrink-0 ${statusColor}`} />
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900 dark:text-white truncate">
-              {courseName}
+          <div className="flex items-center gap-4 flex-1 min-w-0 text-start">
+            <StatusIcon className={`w-6 h-6 flex-shrink-0 ${statusColor}`} />
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 dark:text-white break-words sm:truncate">
+                {courseName}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 break-words sm:truncate">
+                {professorName}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-              {professorName}
-            </div>
-          </div>
         </div>
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="text-sm text-gray-600 dark:text-gray-400">

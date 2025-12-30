@@ -472,24 +472,14 @@ export const EvaluatePage = () => {
       {viewMode === 'subject' && (
         <div className="space-y-4">
           {sessionData.courses.map((course) => (
-            <div key={course.course_id} className="space-y-2">
-              <h3 className="sticky top-0 z-40 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-900 py-3 -mx-4 px-4 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-                {course.subject_name}
-              </h3>
-              {course.professors.map((professor) => (
-                <ProfessorAccordion
-                  key={`${course.course_id}-${professor.professor_id}`}
-                  course={course}
-                  professor={professor}
-                  isExpanded={expandedItems.has(`${course.course_id}-${professor.professor_id}`)}
-                  onToggle={() => toggleExpanded(`${course.course_id}-${professor.professor_id}`)}
-                  answers={answers[`${course.course_id}-${professor.professor_id}`] || {}}
-                  onAnswerChange={(questionId, answer) =>
-                    handleAnswerChange(course.course_id, professor.professor_id, questionId, answer)
-                  }
-                />
-              ))}
-            </div>
+            <SubjectViewItem
+              key={course.course_id}
+              course={course}
+              expandedItems={expandedItems}
+              answers={answers}
+              onToggleProfessor={(professorKey) => toggleExpanded(professorKey)}
+              onAnswerChange={handleAnswerChange}
+            />
           ))}
         </div>
       )}
@@ -516,218 +506,20 @@ export const EvaluatePage = () => {
             const isCategoryComplete = totalInCategory > 0 && answeredInCategory === totalInCategory;
 
             return (
-              <div key={category.categoryName} className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-                {/* Category Header - Accordion */}
-                <button
-                  onClick={() => toggleExpanded(categoryKey)}
-                  className="sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between text-start rounded-t-lg border-b transition-colors shadow-md bg-amber-100 dark:bg-gray-900 border-amber-200 dark:border-gray-700 hover:bg-amber-200 dark:hover:bg-gray-800"
-                >
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-amber-900 dark:text-amber-400">
-                      {category.categoryName === 'uncategorized' ? t('evaluate.uncategorized') : category.categoryName}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {t('evaluate.progress', { answered: answeredInCategory, total: totalInCategory })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isCategoryComplete ? (
-                      <span className="px-2 py-1 text-xs font-medium bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-300 rounded">
-                        {t('evaluate.complete')}
-                      </span>
-                    ) : answeredInCategory > 0 ? (
-                      <span className="px-2 py-1 text-xs font-medium bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-400 rounded">
-                        {t('evaluate.inProgress')}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                        {t('evaluate.notStarted')}
-                      </span>
-                    )}
-                    <ChevronDown
-                      className={`w-5 h-5 text-gray-500 transition-transform ${isCategoryExpanded ? 'rotate-180' : ''}`}
-                    />
-                  </div>
-                </button>
-
-                {/* Category Content */}
-                <AnimatePresence>
-                  {isCategoryExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <div className="p-4 space-y-4">
-                        {/* Questions in this category */}
-                        {category.questions.map((questionGroup, qIndex) => {
-                          const { question, courseProfessors } = questionGroup;
-                          const questionKey = `q-${category.categoryName}-${qIndex}`;
-                          const isQuestionExpanded = expandedItems.has(questionKey);
-
-                          // Calculate question progress
-                          const answeredForQuestion = courseProfessors.filter(({ course, professor }) => {
-                            const answerKey = `${course.course_id}-${professor.professor_id}`;
-                            return !!answers[answerKey]?.[question.id];
-                          }).length;
-                          const totalForQuestion = courseProfessors.length;
-                          const isQuestionComplete = totalForQuestion > 0 && answeredForQuestion === totalForQuestion;
-
-                          return (
-                            <div
-                              key={questionKey}
-                              className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                            >
-                              {/* Question Header - Accordion */}
-                              <div
-                                onClick={() => toggleExpanded(questionKey)}
-                                className={`sticky top-[4.5rem] z-30 w-full px-4 py-3 flex items-center justify-between text-start transition-colors rounded-t-xl shadow-lg border-b cursor-pointer ${
-                                  isQuestionComplete
-                                    ? 'bg-green-100 dark:bg-green-800 border-green-200 dark:border-green-700'
-                                    : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                }`}
-                              >
-                                <div className="flex-1 pe-4">
-                                  <p className={`text-sm font-medium ${
-                                    isQuestionComplete
-                                      ? 'text-green-800 dark:text-green-300'
-                                      : 'text-slate-800 dark:text-slate-200'
-                                  }`}>
-                                    {question.question_text}
-                                    {question.is_mandatory && (
-                                      <span className="text-red-500 dark:text-red-400 ms-1">*</span>
-                                    )}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {t('evaluate.progress', { answered: answeredForQuestion, total: totalForQuestion })}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {isQuestionComplete ? (
-                                    <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
-                                  ) : answeredForQuestion > 0 ? (
-                                    <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded">
-                                      {answeredForQuestion}/{totalForQuestion}
-                                    </span>
-                                  ) : null}
-                                  <ChevronDown
-                                    className={`w-4 h-4 text-gray-500 transition-transform ${isQuestionExpanded ? 'rotate-180' : ''}`}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Question Content - Professor Answers */}
-                              <AnimatePresence>
-                                {isQuestionExpanded && (
-                                  <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                  >
-                                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                                      {courseProfessors.map(({ course, professor }) => {
-                                        const answerKey = `${course.course_id}-${professor.professor_id}`;
-                                        const professorAnswers = answers[answerKey] || {};
-                                        const answer = professorAnswers[question.id];
-                                        const isAnswered = !!answer;
-
-                                        return (
-                                          <div
-                                            key={`${course.course_id}-${professor.professor_id}`}
-                                            className="bg-white dark:bg-gray-800"
-                                          >
-                                            {/* Subject & Professor info - Sticky */}
-                                            <div className="sticky top-[8rem] z-20 px-4 py-2 flex items-center justify-between border-b shadow-md bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                                              <div>
-                                                <p className={`font-medium ${
-                                                  isAnswered
-                                                    ? 'text-green-700 dark:text-green-400'
-                                                    : 'text-gray-900 dark:text-white'
-                                                }`}>
-                                                  {professor.professor_name}
-                                                  {isAnswered && (
-                                                    <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
-                                                  )}
-                                                </p>
-                                                <p className={`text-sm ${
-                                                  isAnswered
-                                                    ? 'text-green-600 dark:text-green-500'
-                                                    : 'text-gray-500 dark:text-gray-400'
-                                                }`}>
-                                                  {course.subject_name}
-                                                </p>
-                                              </div>
-                                            </div>
-
-                                            {/* Answer Input */}
-                                            <div className="px-4 py-4">
-                                            {question.question_type === 'YN' && (
-                                              <YesNoButtons
-                                                value={answer?.ratingValue === 1 ? true : answer?.ratingValue === 0 ? false : undefined}
-                                                onChange={(value) =>
-                                                  handleAnswerChange(course.course_id, professor.professor_id, question.id, {
-                                                    questionId: String(question.id),
-                                                    ratingValue: value ? 1 : 0 as any,
-                                                  })
-                                                }
-                                              />
-                                            )}
-
-                                            {question.question_type === 'R' && (
-                                              <RatingButtons
-                                                value={answer?.ratingValue}
-                                                onChange={(value) =>
-                                                  handleAnswerChange(course.course_id, professor.professor_id, question.id, {
-                                                    questionId: String(question.id),
-                                                    ratingValue: value,
-                                                  })
-                                                }
-                                                variant="rating"
-                                              />
-                                            )}
-
-                                            {question.question_type === 'S' && (
-                                              <RatingButtons
-                                                value={answer?.ratingValue}
-                                                onChange={(value) =>
-                                                  handleAnswerChange(course.course_id, professor.professor_id, question.id, {
-                                                    questionId: String(question.id),
-                                                    ratingValue: value,
-                                                  })
-                                                }
-                                                variant="suggestion"
-                                              />
-                                            )}
-
-                                            {question.question_type === 'T' && (
-                                              <TextAnswer
-                                                value={answer?.textValue || ''}
-                                                onChange={(value) =>
-                                                  handleAnswerChange(course.course_id, professor.professor_id, question.id, {
-                                                    questionId: String(question.id),
-                                                    textValue: value,
-                                                  })
-                                                }
-                                              />
-                                            )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <CategoryViewItem
+                key={category.categoryName}
+                category={category}
+                categoryKey={categoryKey}
+                isCategoryExpanded={isCategoryExpanded}
+                isCategoryComplete={isCategoryComplete}
+                answeredInCategory={answeredInCategory}
+                totalInCategory={totalInCategory}
+                expandedItems={expandedItems}
+                answers={answers}
+                onToggleCategory={() => toggleExpanded(categoryKey)}
+                onToggleQuestion={(questionKey) => toggleExpanded(questionKey)}
+                onAnswerChange={handleAnswerChange}
+              />
             );
           })}
         </div>
@@ -775,25 +567,447 @@ export const EvaluatePage = () => {
   );
 };
 
-// Professor Accordion Component
-interface ProfessorAccordionProps {
+// Category View Item Component - measures category header height
+interface CategoryViewItemProps {
+  category: {
+    categoryName: string;
+    questions: Array<{
+      question: SessionQuestion;
+      courseProfessors: Array<{ course: SessionCourse; professor: SessionProfessor }>;
+    }>;
+  };
+  categoryKey: string;
+  isCategoryExpanded: boolean;
+  isCategoryComplete: boolean;
+  answeredInCategory: number;
+  totalInCategory: number;
+  expandedItems: Set<string>;
+  answers: Record<string, Record<number, Answer>>;
+  onToggleCategory: () => void;
+  onToggleQuestion: (questionKey: string) => void;
+  onAnswerChange: (courseId: number, professorId: number, questionId: number, answer: Answer) => void;
+}
+
+const CategoryViewItem = ({
+  category,
+  categoryKey,
+  isCategoryExpanded,
+  isCategoryComplete,
+  answeredInCategory,
+  totalInCategory,
+  expandedItems,
+  answers,
+  onToggleCategory,
+  onToggleQuestion,
+  onAnswerChange,
+}: CategoryViewItemProps) => {
+  const { t } = useTranslation();
+  const categoryHeaderRef = useRef<HTMLButtonElement>(null);
+  const [categoryHeaderHeight, setCategoryHeaderHeight] = useState(64);
+
+  // Measure category header height
+  useEffect(() => {
+    const element = categoryHeaderRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setCategoryHeaderHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+      {/* Category Header - Accordion */}
+      <button
+        ref={categoryHeaderRef}
+        onClick={onToggleCategory}
+        className="sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between text-start rounded-t-lg border-b transition-colors shadow-md bg-amber-100 dark:bg-gray-900 border-amber-200 dark:border-gray-700 hover:bg-amber-200 dark:hover:bg-gray-800"
+      >
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-amber-900 dark:text-amber-400">
+            {category.categoryName === 'uncategorized' ? t('evaluate.uncategorized') : category.categoryName}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('evaluate.progress', { answered: answeredInCategory, total: totalInCategory })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isCategoryComplete ? (
+            <span className="px-2 py-1 text-xs font-medium bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-300 rounded">
+              {t('evaluate.complete')}
+            </span>
+          ) : answeredInCategory > 0 ? (
+            <span className="px-2 py-1 text-xs font-medium bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-400 rounded">
+              {t('evaluate.inProgress')}
+            </span>
+          ) : (
+            <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+              {t('evaluate.notStarted')}
+            </span>
+          )}
+          <ChevronDown
+            className={`w-5 h-5 text-gray-500 transition-transform ${isCategoryExpanded ? 'rotate-180' : ''}`}
+          />
+        </div>
+      </button>
+
+      {/* Category Content */}
+      <AnimatePresence>
+        {isCategoryExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="p-4 space-y-4">
+              {/* Questions in this category */}
+              {category.questions.map((questionGroup, qIndex) => {
+                const { question, courseProfessors } = questionGroup;
+                const questionKey = `q-${category.categoryName}-${qIndex}`;
+                const isQuestionExpanded = expandedItems.has(questionKey);
+
+                return (
+                  <CategoryQuestionItem
+                    key={questionKey}
+                    question={question}
+                    courseProfessors={courseProfessors}
+                    questionKey={questionKey}
+                    isQuestionExpanded={isQuestionExpanded}
+                    onToggleQuestion={() => onToggleQuestion(questionKey)}
+                    categoryHeaderHeight={categoryHeaderHeight}
+                    answers={answers}
+                    onAnswerChange={onAnswerChange}
+                  />
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Category Question Item Component - handles dynamic sticky positioning
+interface CategoryQuestionItemProps {
+  question: SessionQuestion;
+  courseProfessors: Array<{ course: SessionCourse; professor: SessionProfessor }>;
+  questionKey: string;
+  isQuestionExpanded: boolean;
+  onToggleQuestion: () => void;
+  categoryHeaderHeight: number;
+  answers: Record<string, Record<number, Answer>>;
+  onAnswerChange: (courseId: number, professorId: number, questionId: number, answer: Answer) => void;
+}
+
+const CategoryQuestionItem = ({
+  question,
+  courseProfessors,
+  questionKey,
+  isQuestionExpanded,
+  onToggleQuestion,
+  categoryHeaderHeight,
+  answers,
+  onAnswerChange,
+}: CategoryQuestionItemProps) => {
+  const { t } = useTranslation();
+  const questionHeaderRef = useRef<HTMLDivElement>(null);
+  const [questionHeaderHeight, setQuestionHeaderHeight] = useState(64);
+
+  // Measure question header height
+  useEffect(() => {
+    const element = questionHeaderRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setQuestionHeaderHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const answeredForQuestion = courseProfessors.filter(({ course, professor }) => {
+    const answerKey = `${course.course_id}-${professor.professor_id}`;
+    return !!answers[answerKey]?.[question.id];
+  }).length;
+  const totalForQuestion = courseProfessors.length;
+  const isQuestionComplete = totalForQuestion > 0 && answeredForQuestion === totalForQuestion;
+
+  return (
+    <div
+      key={questionKey}
+      className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+    >
+      {/* Question Header - Accordion */}
+      <div
+        ref={questionHeaderRef}
+        onClick={onToggleQuestion}
+        style={{ top: `${categoryHeaderHeight}px` }}
+        className={`sticky z-30 w-full px-4 py-3 flex items-center justify-between text-start transition-colors rounded-t-xl shadow-lg border-b cursor-pointer ${
+          isQuestionComplete
+            ? 'bg-green-100 dark:bg-green-800 border-green-200 dark:border-green-700'
+            : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+        }`}
+      >
+        <div className="flex-1 pe-4">
+          <p className={`text-sm font-medium ${
+            isQuestionComplete
+              ? 'text-green-800 dark:text-green-300'
+              : 'text-slate-800 dark:text-slate-200'
+          }`}>
+            {question.question_text}
+            {question.is_mandatory && (
+              <span className="text-red-500 dark:text-red-400 ms-1">*</span>
+            )}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {t('evaluate.progress', { answered: answeredForQuestion, total: totalForQuestion })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isQuestionComplete ? (
+            <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
+          ) : answeredForQuestion > 0 ? (
+            <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded">
+              {answeredForQuestion}/{totalForQuestion}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={`w-4 h-4 text-gray-500 transition-transform ${isQuestionExpanded ? 'rotate-180' : ''}`}
+          />
+        </div>
+      </div>
+
+      {/* Question Content - Professor Answers */}
+      <AnimatePresence>
+        {isQuestionExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {courseProfessors.map(({ course, professor }) => {
+                const answerKey = `${course.course_id}-${professor.professor_id}`;
+                const professorAnswers = answers[answerKey] || {};
+                const answer = professorAnswers[question.id];
+                const isAnswered = !!answer;
+
+                const professorTop = categoryHeaderHeight + questionHeaderHeight;
+
+                return (
+                  <div
+                    key={`${course.course_id}-${professor.professor_id}`}
+                    className="bg-white dark:bg-gray-800"
+                  >
+                    {/* Subject & Professor info - Sticky */}
+                    <div
+                      style={{ top: `${professorTop}px` }}
+                      className="sticky z-20 px-4 py-2 flex items-center justify-between border-b shadow-md bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                    >
+                      <div>
+                        <p className={`font-medium ${
+                          isAnswered
+                            ? 'text-green-700 dark:text-green-400'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {professor.professor_name}
+                          {isAnswered && (
+                            <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
+                          )}
+                        </p>
+                        <p className={`text-sm ${
+                          isAnswered
+                            ? 'text-green-600 dark:text-green-500'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {course.subject_name}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Answer Input */}
+                    <div className="px-4 py-4">
+                      {question.question_type === 'YN' && (
+                        <YesNoButtons
+                          value={answer?.ratingValue === 1 ? true : answer?.ratingValue === 0 ? false : undefined}
+                          onChange={(value) =>
+                            onAnswerChange(course.course_id, professor.professor_id, question.id, {
+                              questionId: String(question.id),
+                              ratingValue: value ? 1 : 0 as any,
+                            })
+                          }
+                        />
+                      )}
+
+                      {question.question_type === 'R' && (
+                        <RatingButtons
+                          value={answer?.ratingValue}
+                          onChange={(value) =>
+                            onAnswerChange(course.course_id, professor.professor_id, question.id, {
+                              questionId: String(question.id),
+                              ratingValue: value,
+                            })
+                          }
+                          variant="rating"
+                        />
+                      )}
+
+                      {question.question_type === 'S' && (
+                        <RatingButtons
+                          value={answer?.ratingValue}
+                          onChange={(value) =>
+                            onAnswerChange(course.course_id, professor.professor_id, question.id, {
+                              questionId: String(question.id),
+                              ratingValue: value,
+                            })
+                          }
+                          variant="suggestion"
+                        />
+                      )}
+
+                      {question.question_type === 'T' && (
+                        <TextAnswer
+                          value={answer?.textValue || ''}
+                          onChange={(value) =>
+                            onAnswerChange(course.course_id, professor.professor_id, question.id, {
+                              questionId: String(question.id),
+                              textValue: value,
+                            })
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Subject View Item Component - measures subject header height
+interface SubjectViewItemProps {
+  course: SessionCourse;
+  expandedItems: Set<string>;
+  answers: Record<string, Record<number, Answer>>;
+  onToggleProfessor: (professorKey: string) => void;
+  onAnswerChange: (courseId: number, professorId: number, questionId: number, answer: Answer) => void;
+}
+
+const SubjectViewItem = ({
+  course,
+  expandedItems,
+  answers,
+  onToggleProfessor,
+  onAnswerChange,
+}: SubjectViewItemProps) => {
+  const subjectHeaderRef = useRef<HTMLHeadingElement>(null);
+  const [subjectHeaderHeight, setSubjectHeaderHeight] = useState(48);
+
+  // Measure subject header height
+  useEffect(() => {
+    const element = subjectHeaderRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setSubjectHeaderHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <h3
+        ref={subjectHeaderRef}
+        className="sticky top-0 z-40 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-900 py-3 -mx-4 px-4 border-b border-gray-200 dark:border-gray-700 shadow-sm"
+      >
+        {course.subject_name}
+      </h3>
+      {course.professors.map((professor) => {
+        const professorKey = `${course.course_id}-${professor.professor_id}`;
+        return (
+          <SubjectProfessorAccordion
+            key={professorKey}
+            course={course}
+            professor={professor}
+            isExpanded={expandedItems.has(professorKey)}
+            onToggle={() => onToggleProfessor(professorKey)}
+            answers={answers[professorKey] || {}}
+            onAnswerChange={(questionId, answer) =>
+              onAnswerChange(course.course_id, professor.professor_id, questionId, answer)
+            }
+            subjectHeaderHeight={subjectHeaderHeight}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+// Subject Professor Accordion Component - measures professor header height
+interface SubjectProfessorAccordionProps {
   course: SessionCourse;
   professor: SessionProfessor;
   isExpanded: boolean;
   onToggle: () => void;
   answers: Record<number, Answer>;
   onAnswerChange: (questionId: number, answer: Answer) => void;
+  subjectHeaderHeight: number;
 }
 
-const ProfessorAccordion = ({
+const SubjectProfessorAccordion = ({
   course,
   professor,
   isExpanded,
   onToggle,
   answers,
   onAnswerChange,
-}: ProfessorAccordionProps) => {
+  subjectHeaderHeight,
+}: SubjectProfessorAccordionProps) => {
   const { t, i18n } = useTranslation();
+  const professorHeaderRef = useRef<HTMLButtonElement>(null);
+  const [professorHeaderHeight, setProfessorHeaderHeight] = useState(64);
+
+  // Measure professor header height
+  useEffect(() => {
+    const element = professorHeaderRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setProfessorHeaderHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const answeredCount = Object.keys(answers).length;
   const totalQuestions = professor.questions.length;
@@ -856,8 +1070,10 @@ const ProfessorAccordion = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
       <button
+        ref={professorHeaderRef}
         onClick={onToggle}
-        className="sticky top-12 z-30 w-full px-4 py-3 flex items-center justify-between text-start bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-200 dark:border-gray-700 rounded-t-lg shadow-sm"
+        style={{ top: `${subjectHeaderHeight}px` }}
+        className="sticky z-30 w-full px-4 py-3 flex items-center justify-between text-start bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-200 dark:border-gray-700 rounded-t-lg shadow-sm"
       >
         <div className="flex-1">
           <div className="font-medium text-gray-900 dark:text-white">
@@ -890,172 +1106,257 @@ const ProfessorAccordion = ({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
             <div className="px-4 pb-4 space-y-6 border-t border-gray-200 dark:border-gray-700 pt-4">
               {/* Group questions by category */}
-              {groupedQuestions.map(({ categoryName, questions }) => {
-                const isCategoryComplete = questions.every(
-                  (question) => !!answers[question.id]
-                );
-
-                const answeredInCategory = questions.reduce(
-                  (count, question) => (answers[question.id] ? count + 1 : count),
-                  0
-                );
-                const totalInCategory = questions.length;
-
-                const categoryContainerClasses = isCategoryComplete
-                  ? 'bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700'
-                  : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600';
-
-                const categoryTextClasses = isCategoryComplete
-                  ? 'text-green-800 dark:text-green-300'
-                  : 'text-slate-800 dark:text-slate-200';
-
-                const isSpecialCategory = categoryName === 'uncategorized';
-                const isCategoryExpanded =
-                  isSpecialCategory || expandedCategories.has(categoryName);
-
-                return (
-                  <div
-                    key={categoryName}
-                    className="space-y-2 w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 shadow-inner"
-                  >
-                    {!isSpecialCategory && (
-                      <button
-                        type="button"
-                        onClick={() => toggleCategorySection(categoryName)}
-                        aria-expanded={isCategoryExpanded}
-                        className={`sticky top-[7.5rem] z-20 w-full px-4 py-3 rounded-t-2xl border-b text-left flex items-center justify-between gap-3 transition-colors ${categoryContainerClasses}`}
-                      >
-                        <span className={`text-lg font-bold flex items-center gap-3 ${categoryTextClasses}`}>
-                          {categoryName}
-                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            ({numberFormatter.format(answeredInCategory)}/{numberFormatter.format(totalInCategory)})
-                          </span>
-                        </span>
-                        <ChevronDown
-                          className={`w-5 h-5 text-current transition-transform ${
-                            isCategoryExpanded ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
-                    )}
-
-                    <AnimatePresence initial={false}>
-                      {isCategoryExpanded && (
-                        <motion.div
-                          key={categoryName}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="space-y-5 w-full px-4 pb-4"
-                        >
-                          {questions.map((question, index) => {
-                            const answer = answers[question.id];
-                            const questionType = question.question_type;
-
-                            const isAnswered = !!answer;
-                            const isLast = index === questions.length - 1;
-
-                            return (
-                              <div
-                                key={question.id}
-                                className={`space-y-3 w-full pt-3 border-t ${
-                                  isLast ? 'pb-2' : 'pb-5'
-                                } border-gray-200 dark:border-gray-700`}
-                              >
-                                <div className={`sticky top-[10.5rem] z-10 w-full py-2 -mt-2 shadow-sm ${
-                                  isAnswered
-                                    ? 'bg-green-100 dark:bg-green-800'
-                                    : 'bg-slate-100 dark:bg-slate-800'
-                                }`}>
-                                  <label className={`block text-sm font-medium w-full ${
-                                    isAnswered
-                                      ? 'text-green-800 dark:text-green-300'
-                                      : 'text-slate-800 dark:text-slate-200'
-                                  }`}>
-                                    {question.question_text}
-                                    {question.is_mandatory && (
-                                      <span className="text-red-500 dark:text-red-400 ms-1">*</span>
-                                    )}
-                                    {isAnswered && (
-                                      <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
-                                    )}
-                                  </label>
-                                </div>
-
-                                {/* Yes/No Question */}
-                                {questionType === 'YN' && (
-                                  <YesNoButtons
-                                    value={answer?.ratingValue === 1 ? true : answer?.ratingValue === 0 ? false : undefined}
-                                    onChange={(value) =>
-                                      onAnswerChange(question.id, {
-                                        questionId: String(question.id),
-                                        ratingValue: value ? 1 : 0 as any,
-                                      })
-                                    }
-                                  />
-                                )}
-
-                                {/* Rating Question (1=Very Low, 5=Very High) */}
-                                {questionType === 'R' && (
-                                  <RatingButtons
-                                    value={answer?.ratingValue}
-                                    onChange={(value) =>
-                                      onAnswerChange(question.id, {
-                                        questionId: String(question.id),
-                                        ratingValue: value,
-                                      })
-                                    }
-                                    variant="rating"
-                                  />
-                                )}
-
-                                {/* Suggestion Question (1=Strongly Disagree, 5=Strongly Agree) */}
-                                {questionType === 'S' && (
-                                  <RatingButtons
-                                    value={answer?.ratingValue}
-                                    onChange={(value) =>
-                                      onAnswerChange(question.id, {
-                                        questionId: String(question.id),
-                                        ratingValue: value,
-                                      })
-                                    }
-                                    variant="suggestion"
-                                  />
-                                )}
-
-                                {/* Text Question */}
-                                {questionType === 'T' && (
-                                  <TextAnswer
-                                    value={answer?.textValue || ''}
-                                    onChange={(value) =>
-                                      onAnswerChange(question.id, {
-                                        questionId: String(question.id),
-                                        textValue: value,
-                                      })
-                                    }
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
+              {groupedQuestions.map(({ categoryName, questions }) => (
+                <SubjectCategorySection
+                  key={categoryName}
+                  categoryName={categoryName}
+                  questions={questions}
+                  answers={answers}
+                  onAnswerChange={onAnswerChange}
+                  expandedCategories={expandedCategories}
+                  onToggleCategory={toggleCategorySection}
+                  numberFormatter={numberFormatter}
+                  subjectHeaderHeight={subjectHeaderHeight}
+                  professorHeaderHeight={professorHeaderHeight}
+                />
+              ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+// Subject Category Section Component - measures category header height
+interface SubjectCategorySectionProps {
+  categoryName: string;
+  questions: SessionQuestion[];
+  answers: Record<number, Answer>;
+  onAnswerChange: (questionId: number, answer: Answer) => void;
+  expandedCategories: Set<string>;
+  onToggleCategory: (categoryName: string) => void;
+  numberFormatter: Intl.NumberFormat;
+  subjectHeaderHeight: number;
+  professorHeaderHeight: number;
+}
+
+const SubjectCategorySection = ({
+  categoryName,
+  questions,
+  answers,
+  onAnswerChange,
+  expandedCategories,
+  onToggleCategory,
+  numberFormatter,
+  subjectHeaderHeight,
+  professorHeaderHeight,
+}: SubjectCategorySectionProps) => {
+  const categoryHeaderRef = useRef<HTMLButtonElement>(null);
+  const [categoryHeaderHeight, setCategoryHeaderHeight] = useState(56);
+
+  // Measure category header height
+  useEffect(() => {
+    const element = categoryHeaderRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setCategoryHeaderHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const isCategoryComplete = questions.every(
+    (question) => !!answers[question.id]
+  );
+
+  const answeredInCategory = questions.reduce(
+    (count, question) => (answers[question.id] ? count + 1 : count),
+    0
+  );
+  const totalInCategory = questions.length;
+
+  const categoryContainerClasses = isCategoryComplete
+    ? 'bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700'
+    : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600';
+
+  const categoryTextClasses = isCategoryComplete
+    ? 'text-green-800 dark:text-green-300'
+    : 'text-slate-800 dark:text-slate-200';
+
+  const isSpecialCategory = categoryName === 'uncategorized';
+  const isCategoryExpanded =
+    isSpecialCategory || expandedCategories.has(categoryName);
+
+  const categoryTop = subjectHeaderHeight + professorHeaderHeight;
+  const questionTop = categoryTop + (isSpecialCategory ? 0 : categoryHeaderHeight);
+
+  return (
+    <div className="space-y-2 w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 shadow-inner">
+      {!isSpecialCategory && (
+        <button
+          ref={categoryHeaderRef}
+          type="button"
+          onClick={() => onToggleCategory(categoryName)}
+          aria-expanded={isCategoryExpanded}
+          style={{ top: `${categoryTop}px` }}
+          className={`sticky z-20 w-full px-4 py-3 rounded-t-2xl border-b text-left flex items-center justify-between gap-3 transition-colors ${categoryContainerClasses}`}
+        >
+          <span className={`text-lg font-bold flex items-center gap-3 ${categoryTextClasses}`}>
+            {categoryName}
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+              ({numberFormatter.format(answeredInCategory)}/{numberFormatter.format(totalInCategory)})
+            </span>
+          </span>
+          <ChevronDown
+            className={`w-5 h-5 text-current transition-transform ${
+              isCategoryExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      )}
+
+      <AnimatePresence initial={false}>
+        {isCategoryExpanded && (
+          <motion.div
+            key={categoryName}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-5 w-full px-4 pb-4"
+          >
+            {questions.map((question, index) => (
+              <SubjectQuestionItem
+                key={question.id}
+                question={question}
+                answer={answers[question.id]}
+                onAnswerChange={onAnswerChange}
+                isLast={index === questions.length - 1}
+                questionTop={questionTop}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Subject Question Item Component - uses calculated top position
+interface SubjectQuestionItemProps {
+  question: SessionQuestion;
+  answer: Answer | undefined;
+  onAnswerChange: (questionId: number, answer: Answer) => void;
+  isLast: boolean;
+  questionTop: number;
+}
+
+const SubjectQuestionItem = ({
+  question,
+  answer,
+  onAnswerChange,
+  isLast,
+  questionTop,
+}: SubjectQuestionItemProps) => {
+  const isAnswered = !!answer;
+  const questionType = question.question_type;
+
+  return (
+    <div
+      className={`space-y-3 w-full pt-3 border-t ${
+        isLast ? 'pb-2' : 'pb-5'
+      } border-gray-200 dark:border-gray-700`}
+    >
+      <div
+        style={{ top: `${questionTop}px` }}
+        className={`sticky z-10 w-full py-2 -mt-2 shadow-sm ${
+          isAnswered
+            ? 'bg-green-100 dark:bg-green-800'
+            : 'bg-slate-100 dark:bg-slate-800'
+        }`}
+      >
+        <label className={`block text-sm font-medium w-full ${
+          isAnswered
+            ? 'text-green-800 dark:text-green-300'
+            : 'text-slate-800 dark:text-slate-200'
+        }`}>
+          {question.question_text}
+          {question.is_mandatory && (
+            <span className="text-red-500 dark:text-red-400 ms-1">*</span>
+          )}
+          {isAnswered && (
+            <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
+          )}
+        </label>
+      </div>
+
+      {/* Yes/No Question */}
+      {questionType === 'YN' && (
+        <YesNoButtons
+          value={answer?.ratingValue === 1 ? true : answer?.ratingValue === 0 ? false : undefined}
+          onChange={(value) =>
+            onAnswerChange(question.id, {
+              questionId: String(question.id),
+              ratingValue: value ? 1 : 0 as any,
+            })
+          }
+        />
+      )}
+
+      {/* Rating Question (1=Very Low, 5=Very High) */}
+      {questionType === 'R' && (
+        <RatingButtons
+          value={answer?.ratingValue}
+          onChange={(value) =>
+            onAnswerChange(question.id, {
+              questionId: String(question.id),
+              ratingValue: value,
+            })
+          }
+          variant="rating"
+        />
+      )}
+
+      {/* Suggestion Question (1=Strongly Disagree, 5=Strongly Agree) */}
+      {questionType === 'S' && (
+        <RatingButtons
+          value={answer?.ratingValue}
+          onChange={(value) =>
+            onAnswerChange(question.id, {
+              questionId: String(question.id),
+              ratingValue: value,
+            })
+          }
+          variant="suggestion"
+        />
+      )}
+
+      {/* Text Question */}
+      {questionType === 'T' && (
+        <TextAnswer
+          value={answer?.textValue || ''}
+          onChange={(value) =>
+            onAnswerChange(question.id, {
+              questionId: String(question.id),
+              textValue: value,
+            })
+          }
+        />
+      )}
     </div>
   );
 };

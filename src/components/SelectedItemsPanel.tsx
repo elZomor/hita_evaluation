@@ -59,10 +59,10 @@ export const SelectedItemsPanel = ({
                       className="flex items-start gap-2 p-2 rounded bg-gray-50 dark:bg-gray-900 group"
                     >
                       <div className="flex-1 min-w-0 text-sm">
-                        <div className="font-medium text-gray-900 dark:text-white truncate">
+                        <div className="font-medium text-gray-900 dark:text-white break-words sm:truncate">
                           {courseName}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 break-words sm:truncate">
                           {professorName}
                         </div>
                       </div>

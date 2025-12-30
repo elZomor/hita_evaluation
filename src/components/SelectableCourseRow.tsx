@@ -33,10 +33,10 @@ export const SelectableCourseRow = ({
         className="w-6 h-6 rounded border-gray-300 text-amber-600 focus:ring-amber-500 focus:ring-2 cursor-pointer"
       />
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-gray-900 dark:text-white truncate">
+        <div className="font-semibold text-gray-900 dark:text-white break-words sm:truncate">
           {courseName}
         </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+        <div className="text-sm text-gray-600 dark:text-gray-400 break-words sm:truncate">
           {professorName}
         </div>
       </div>
