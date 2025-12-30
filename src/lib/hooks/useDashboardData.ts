@@ -49,3 +49,11 @@ export function useDashboardSemesters() {
     staleTime: 30 * 60 * 1000,
   });
 }
+
+export function useDashboardRegulations() {
+  return useQuery({
+    queryKey: ['dashboardRegulations'],
+    queryFn: dashboardClient.getRegulations,
+    staleTime: 30 * 60 * 1000,
+  });
+}

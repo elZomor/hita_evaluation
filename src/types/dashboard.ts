@@ -43,12 +43,18 @@ export interface DashboardCategory {
   order_index: number
 }
 
+export interface DashboardRegulation {
+  id: string
+  name: string
+  is_latest: boolean
+}
+
 export interface FilterParams {
   semesterIds?: string[]
   departmentIds?: string[]
   courseIds?: string[]
   professorIds?: string[]
-  regulations?: string[]
+  regulationIds?: string[]
   cohortIds?: string[]
 }
 

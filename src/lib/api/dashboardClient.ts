@@ -5,8 +5,10 @@ import type {
   DashboardProfessor,
   DashboardCategory,
   DashboardSemester,
+  DashboardRegulation,
   FilterParams,
 } from '../../types/dashboard';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8005';
 
@@ -14,6 +16,41 @@ interface ApiResponse<T> {
   data: T;
   status: string;
   message: string | null;
+}
+
+/**
+ * Authenticated fetch wrapper that adds JWT token and handles auto-refresh on 401
+ */
+async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const authState = useAuthStore.getState();
+  const accessToken = authState.accessToken;
+
+  const headers = {
+    ...options.headers,
+    ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+  };
+
+  let response = await fetch(url, { ...options, headers });
+
+  // If 401 Unauthorized, try to refresh the token
+  if (response.status === 401 && authState.refreshToken) {
+    const refreshed = await authState.refreshAccessToken();
+    if (refreshed) {
+      // Retry with new token
+      const newAccessToken = useAuthStore.getState().accessToken;
+      const newHeaders = {
+        ...options.headers,
+        ...(newAccessToken && { Authorization: `Bearer ${newAccessToken}` }),
+      };
+      response = await fetch(url, { ...options, headers: newHeaders });
+    } else {
+      // Refresh failed, logout and redirect
+      authState.logout();
+      window.location.href = '/login';
+    }
+  }
+
+  return response;
 }
 
 export const dashboardClient = {
@@ -32,14 +69,14 @@ export const dashboardClient = {
     if (filters?.professorIds?.length) {
       filters.professorIds.forEach(id => params.append('professor_ids', id));
     }
-    if (filters?.regulations?.length) {
-      filters.regulations.forEach(r => params.append('regulations', r));
+    if (filters?.regulationIds?.length) {
+      filters.regulationIds.forEach(id => params.append('regulation_ids', id));
     }
 
     const queryString = params.toString();
     const url = `${API_BASE_URL}/hita_evaluation/dashboard/answers${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch evaluation answers');
     }
@@ -48,7 +85,7 @@ export const dashboardClient = {
   },
 
   getSemesters: async (): Promise<DashboardSemester[]> => {
-    const response = await fetch(`${API_BASE_URL}/hita_evaluation/dashboard/semesters`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/hita_evaluation/dashboard/semesters`);
     if (!response.ok) {
       throw new Error('Failed to fetch semesters');
     }
@@ -57,7 +94,7 @@ export const dashboardClient = {
   },
 
   getDashboardDepartments: async (): Promise<DashboardDepartment[]> => {
-    const response = await fetch(`${API_BASE_URL}/hita_evaluation/dashboard/departments`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/hita_evaluation/dashboard/departments`);
     if (!response.ok) {
       throw new Error('Failed to fetch departments');
     }
@@ -74,7 +111,7 @@ export const dashboardClient = {
     const queryString = params.toString();
     const url = `${API_BASE_URL}/hita_evaluation/dashboard/courses${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
@@ -94,7 +131,7 @@ export const dashboardClient = {
     const queryString = params.toString();
     const url = `${API_BASE_URL}/hita_evaluation/dashboard/professors${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch professors');
     }
@@ -103,11 +140,20 @@ export const dashboardClient = {
   },
 
   getCategories: async (): Promise<DashboardCategory[]> => {
-    const response = await fetch(`${API_BASE_URL}/hita_evaluation/dashboard/categories`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/hita_evaluation/dashboard/categories`);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
     }
     const result: ApiResponse<DashboardCategory[]> = await response.json();
+    return result.data;
+  },
+
+  getRegulations: async (): Promise<DashboardRegulation[]> => {
+    const response = await authenticatedFetch(`${API_BASE_URL}/hita_evaluation/dashboard/regulations`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch regulations');
+    }
+    const result: ApiResponse<DashboardRegulation[]> = await response.json();
     return result.data;
   },
 };

@@ -6,10 +6,12 @@ import { useInactivityTimer } from './lib/hooks/useInactivityTimer';
 import { useEvaluationStore } from './store/useEvaluationStore';
 import { AppShell } from './components/AppShell';
 import { InactivityModal } from './components/InactivityModal';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { StartPage } from './pages/StartPage';
 import { SelectPage } from './pages/SelectPage';
 import { EvaluatePage } from './pages/EvaluatePage';
 import { DashboardPage } from './pages/DashboardPage';
+import { LoginPage } from './pages/LoginPage';
 import './lib/i18n/config';
 import { useTranslation } from 'react-i18next';
 
@@ -59,14 +61,43 @@ function AppContent() {
 
   return (
     <>
-      <AppShell>
-        <Routes>
-          <Route path="/" element={<StartPage />} />
-          <Route path="/select" element={<SelectPage />} />
-          <Route path="/evaluate/:sessionId" element={<EvaluatePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Routes>
-      </AppShell>
+      <Routes>
+        {/* Routes with AppShell (kiosk flow) */}
+        <Route
+          path="/"
+          element={
+            <AppShell>
+              <StartPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/select"
+          element={
+            <AppShell>
+              <SelectPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/evaluate/:sessionId"
+          element={
+            <AppShell>
+              <EvaluatePage />
+            </AppShell>
+          }
+        />
+        {/* Routes without AppShell (own headers) */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
       <InactivityModal
         isOpen={showModal}
         onContinue={handleContinue}

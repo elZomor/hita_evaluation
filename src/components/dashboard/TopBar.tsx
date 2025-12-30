@@ -1,8 +1,10 @@
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { useLocaleFormatting } from '@/lib/hooks/useLocaleFormatting';
+import { useAuthStore } from '@/store/useAuthStore';
 import { FlagIcon } from '../FlagIcon';
 
 interface TopBarProps {
@@ -10,13 +12,20 @@ interface TopBarProps {
 }
 
 export function TopBar({ lastUpdated }: TopBarProps) {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const { formatDate } = useLocaleFormatting();
+  const logout = useAuthStore((state) => state.logout);
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'ar' ? 'en' : 'ar';
     i18n.changeLanguage(newLang);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -52,6 +61,15 @@ export function TopBar({ lastUpdated }: TopBarProps) {
             ) : (
               <Sun className="h-5 w-5" />
             )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="transition-transform hover:scale-105 text-destructive hover:text-destructive"
+            aria-label={t('login.logout')}
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>

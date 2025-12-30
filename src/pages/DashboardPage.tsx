@@ -24,6 +24,7 @@ import {
   useDashboardProfessors,
   useDashboardCategories,
   useDashboardSemesters,
+  useDashboardRegulations,
 } from '@/lib/hooks/useDashboardData';
 import type { FilterParams } from '@/types/dashboard';
 import {
@@ -61,6 +62,8 @@ export function DashboardPage() {
     useEvaluationAnswers(filters);
   const { data: semesters = [], isLoading: semestersLoading } =
     useDashboardSemesters();
+  const { data: regulations = [], isLoading: regulationsLoading } =
+    useDashboardRegulations();
 
   // Set current semester as default when semesters are loaded
   useEffect(() => {
@@ -78,7 +81,8 @@ export function DashboardPage() {
     professorsLoading ||
     categoriesLoading ||
     answersLoading ||
-    semestersLoading;
+    semestersLoading ||
+    regulationsLoading;
 
   const kpiMetrics = useMemo(
     () => calculateKPIMetrics(answers),
@@ -202,6 +206,7 @@ export function DashboardPage() {
           courses={courses}
           professors={professors}
           semesters={semesters}
+          regulations={regulations}
         />
 
         {isLoading ? (

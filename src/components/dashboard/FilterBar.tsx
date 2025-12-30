@@ -10,6 +10,7 @@ import type {
   DashboardCourse,
   DashboardProfessor,
   DashboardSemester,
+  DashboardRegulation,
 } from '@/types/dashboard';
 
 interface Option {
@@ -142,6 +143,7 @@ interface FilterBarProps {
   courses: DashboardCourse[];
   professors: DashboardProfessor[];
   semesters: DashboardSemester[];
+  regulations: DashboardRegulation[];
 }
 
 export function FilterBar({
@@ -151,6 +153,7 @@ export function FilterBar({
   courses,
   professors,
   semesters,
+  regulations = [],
 }: FilterBarProps) {
   const { t, i18n } = useTranslation();
   const language = i18n.language;
@@ -179,9 +182,10 @@ export function FilterBar({
   const hasActiveFilters =
     (filters.departmentIds && filters.departmentIds.length > 0) ||
     (filters.courseIds && filters.courseIds.length > 0) ||
-    (filters.professorIds && filters.professorIds.length > 0);
+    (filters.professorIds && filters.professorIds.length > 0) ||
+    (filters.regulationIds && filters.regulationIds.length > 0);
 
-  const getName = (id: string, type: 'department' | 'course' | 'professor' | 'semester') => {
+  const getName = (id: string, type: 'department' | 'course' | 'professor' | 'semester' | 'regulation') => {
     const lang = language === 'ar' ? 'name_ar' : 'name_en';
     if (type === 'department') {
       return departments.find((d) => d.id === id)?.[lang] || id;
@@ -198,6 +202,9 @@ export function FilterBar({
         return `${semester.year} - ${semester.type_display}`;
       }
       return id;
+    }
+    if (type === 'regulation') {
+      return regulations.find((r) => r.id === id)?.name || id;
     }
     return id;
   };
@@ -241,6 +248,13 @@ export function FilterBar({
     }, []);
   }, [professors, language]);
 
+  const regulationOptions = useMemo<Option[]>(() => {
+    return regulations.map((reg) => ({
+      value: reg.id,
+      label: reg.is_latest ? `${reg.name} (${t('dashboard.current')})` : reg.name,
+    }));
+  }, [regulations, t]);
+
   const semesterOptions = useMemo<Option[]>(() => {
     return semesters.map((semester) => ({
       value: semester.id,
@@ -251,7 +265,7 @@ export function FilterBar({
   return (
     <Card className="p-4">
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <DropdownFilter
             label={t('dashboard.semester')}
             options={semesterOptions}
@@ -260,6 +274,17 @@ export function FilterBar({
             placeholderLabel={t('common.all')}
             searchPlaceholder={t('common.search')}
             disabled={semesterOptions.length === 0}
+            emptyLabel={t('common.noData')}
+          />
+
+          <DropdownFilter
+            label={t('dashboard.regulation')}
+            options={regulationOptions}
+            selectedValues={filters.regulationIds || []}
+            onChange={(values) => updateFilter('regulationIds', values)}
+            placeholderLabel={t('common.all')}
+            searchPlaceholder={t('common.search')}
+            disabled={regulationOptions.length === 0}
             emptyLabel={t('common.noData')}
           />
 
@@ -329,6 +354,18 @@ export function FilterBar({
                 {getName(id, 'professor')}
                 <button
                   onClick={() => clearFilter('professorIds')}
+                  className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={t('dashboard.clearSelection')}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            {filters.regulationIds?.map((id) => (
+              <Badge key={id} variant="secondary" className="gap-1">
+                {getName(id, 'regulation')}
+                <button
+                  onClick={() => clearFilter('regulationIds')}
                   className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   aria-label={t('dashboard.clearSelection')}
                 >
