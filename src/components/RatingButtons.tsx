@@ -62,7 +62,7 @@ export const RatingButtons = ({
         {ratings.map((rating) => (
           <div key={rating} className="flex flex-col items-center flex-1 sm:flex-none">
             {/* Labels above buttons 1 and 5 */}
-            <div className="min-h-8 sm:min-h-10 mb-2 relative z-10 flex items-end">
+            <div className="min-h-8 sm:min-h-10 mb-2 flex items-end">
               {rating === 1 && (
                 <span className={`text-[10px] sm:text-xs font-medium text-center ${isRating ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`}>
                   {labels.low}

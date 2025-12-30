@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -15,14 +15,43 @@ export const SelectPage = () => {
   const { t } = useTranslation();
 
   const selectedDepartmentId = useEvaluationStore((state) => state.selectedDepartmentId);
+  const selectedRegulationId = useEvaluationStore((state) => state.selectedRegulationId);
   const isParallel = useEvaluationStore((state) => state.isParallel);
   const selectedAssignments = useEvaluationStore((state) => state.selectedAssignments);
+  const sessionData = useEvaluationStore((state) => state.sessionData);
   const setSelectedDepartment = useEvaluationStore((state) => state.setSelectedDepartment);
+  const setSelectedRegulation = useEvaluationStore((state) => state.setSelectedRegulation);
   const setIsParallel = useEvaluationStore((state) => state.setIsParallel);
   const toggleAssignment = useEvaluationStore((state) => state.toggleAssignment);
   const setSessionData = useEvaluationStore((state) => state.setSessionData);
+  const resetAll = useEvaluationStore((state) => state.resetAll);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Check for existing draft session on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      if (sessionData?.session_id) {
+        try {
+          const session = await apiClient.getSession(sessionData.session_id);
+          if (session.status === 'completed') {
+            // Session already submitted, reset and start fresh
+            resetAll();
+          } else {
+            // Draft session exists, navigate to evaluate
+            navigate(`/evaluate/${sessionData.session_id}`);
+            return;
+          }
+        } catch {
+          // Session not found, reset and start fresh
+          resetAll();
+        }
+      }
+      setIsCheckingSession(false);
+    };
+    checkExistingSession();
+  }, []);
 
   // Fetch departments on page load
   const { data: departments, isLoading: loadingDepts } = useQuery({
@@ -30,10 +59,22 @@ export const SelectPage = () => {
     queryFn: apiClient.getDepartments,
   });
 
-  // Fetch ALL courses on page load (not per department)
-  const { data: allCourses, isLoading: loadingCourses } = useQuery({
-    queryKey: ['courses'],
-    queryFn: apiClient.getCourses,
+  // Fetch regulations on page load
+  const { data: regulations, isLoading: loadingRegulations } = useQuery({
+    queryKey: ['regulations'],
+    queryFn: apiClient.getRegulations,
+  });
+
+  // Fetch courses only when all filters are selected (uses backend filtering)
+  const { data: courses, isLoading: loadingCourses } = useQuery({
+    queryKey: ['courses', selectedDepartmentId, selectedRegulationId, isParallel],
+    queryFn: () =>
+      apiClient.getCourses({
+        department: selectedDepartmentId!,
+        regulation_id: selectedRegulationId!,
+        is_parallel: isParallel!,
+      }),
+    enabled: !!selectedDepartmentId && !!selectedRegulationId && isParallel !== null,
   });
 
   // Start session mutation
@@ -41,26 +82,20 @@ export const SelectPage = () => {
     mutationFn: apiClient.startSession,
     onSuccess: (data) => {
       setSessionData(data);
-      navigate('/evaluate');
+      navigate(`/evaluate/${data.session_id}`);
     },
   });
 
-  // Filter courses by selected department (client-side filtering)
-  // Courses only appear when both department AND education type are selected
-  const departmentCourses = useMemo(() => {
-    if (!allCourses || !selectedDepartmentId || isParallel === null) return [];
-    return allCourses.filter((course) => course.department === selectedDepartmentId);
-  }, [allCourses, selectedDepartmentId, isParallel]);
-
   // Add category info to courses for SelectedAssignment compatibility
   const allItems = useMemo(() => {
-    return departmentCourses.map((item) => ({
+    if (!courses) return [];
+    return courses.map((item) => ({
       ...item,
       categoryId: item.category || '',
       categoryTitle_ar: item.category || '',
       categoryTitle_en: item.category || '',
     }));
-  }, [departmentCourses]);
+  }, [courses]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) return allItems;
@@ -87,17 +122,24 @@ export const SelectPage = () => {
   };
 
   const handleContinue = () => {
-    if (selectedAssignments.length === 0 || !selectedDepartmentId || isParallel === null) return;
+    if (
+      selectedAssignments.length === 0 ||
+      !selectedDepartmentId ||
+      !selectedRegulationId ||
+      isParallel === null
+    )
+      return;
 
     const courseIds = selectedAssignments.map((a) => Number(a.courseId));
     startSessionMutation.mutate({
       course_ids: courseIds,
       department: selectedDepartmentId,
+      regulation_id: selectedRegulationId,
       is_parallel: isParallel,
     });
   };
 
-  if (loadingDepts || loadingCourses) {
+  if (isCheckingSession || loadingDepts || loadingRegulations) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-4">
@@ -137,8 +179,31 @@ export const SelectPage = () => {
           </select>
         </div>
 
-        {/* Education Type Selection */}
+        {/* Regulation Selection */}
         {selectedDepartmentId && (
+          <div className="max-w-md">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('select.selectRegulation')}
+            </label>
+            <select
+              value={selectedRegulationId || ''}
+              onChange={(e) =>
+                setSelectedRegulation(e.target.value ? Number(e.target.value) : null)
+              }
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500 transition-colors"
+            >
+              <option value="">{t('select.selectRegulation')}</option>
+              {regulations?.map((reg) => (
+                <option key={reg.id} value={reg.id}>
+                  {reg.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Education Type Selection */}
+        {selectedDepartmentId && selectedRegulationId && (
           <div className="max-w-md">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('select.selectEducationType')}
@@ -179,7 +244,16 @@ export const SelectPage = () => {
           </div>
         )}
 
-        {selectedDepartmentId && isParallel === null && (
+        {selectedDepartmentId && !selectedRegulationId && (
+          <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              {t('select.regulationRequired')}
+            </p>
+          </div>
+        )}
+
+        {selectedDepartmentId && selectedRegulationId && isParallel === null && (
           <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
             <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <p className="text-sm text-blue-800 dark:text-blue-300">
@@ -189,7 +263,7 @@ export const SelectPage = () => {
         )}
       </div>
 
-      {selectedDepartmentId && isParallel !== null && (
+      {selectedDepartmentId && selectedRegulationId && isParallel !== null && (
         <>
           {/* Mobile: Selected items at top */}
           <div className="lg:hidden">
@@ -214,7 +288,11 @@ export const SelectPage = () => {
                 />
               </div>
 
-              {filteredItems.length === 0 ? (
+              {loadingCourses ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                </div>
+              ) : filteredItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   {searchQuery ? t('select.noResults') : t('select.noCourses')}
                 </div>

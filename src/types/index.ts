@@ -3,6 +3,14 @@ export interface Department {
   label: string;
 }
 
+export interface Regulation {
+  id: number;
+  name: string;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_latest: boolean;
+}
+
 export type CategoryType = "REQUIRED" | "OPTIONAL";
 export type CategoryScope = "ACADEMY" | "INSTITUTE" | "DEPARTMENT";
 
@@ -133,10 +141,20 @@ export interface SessionCourse {
 export interface StartSessionRequest {
   course_ids: number[];
   department: string;
-  is_parallel?: boolean;
+  regulation_id: number;
+  is_parallel: boolean;
 }
 
 export interface StartSessionResponse {
   session_id: string;
+  courses: SessionCourse[];
+}
+
+export interface GetSessionResponse {
+  session_id: string;
+  status: 'draft' | 'completed';
+  department: string;
+  regulation_id: number | null;
+  is_parallel: boolean;
   courses: SessionCourse[];
 }

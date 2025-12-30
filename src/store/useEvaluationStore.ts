@@ -11,11 +11,13 @@ interface AnswerMap {
 
 interface EvaluationState {
   selectedDepartmentId: string | null;
+  selectedRegulationId: number | null;
   isParallel: boolean | null;
   selectedAssignments: SelectedAssignment[];
   sessionData: StartSessionResponse | null;
   answers: AnswerMap;
   setSelectedDepartment: (departmentId: string | null) => void;
+  setSelectedRegulation: (regulationId: number | null) => void;
   setIsParallel: (isParallel: boolean | null) => void;
   toggleAssignment: (assignment: SelectedAssignment) => void;
   clearAssignments: () => void;
@@ -36,13 +38,22 @@ export const useEvaluationStore = create<EvaluationState>()(
   persist(
     (set, get) => ({
       selectedDepartmentId: null,
+      selectedRegulationId: null,
       isParallel: null,
       selectedAssignments: [],
       sessionData: null,
       answers: {},
 
       setSelectedDepartment: (departmentId) =>
-        set({ selectedDepartmentId: departmentId, selectedAssignments: [], isParallel: null }),
+        set({
+          selectedDepartmentId: departmentId,
+          selectedAssignments: [],
+          isParallel: null,
+          selectedRegulationId: null,
+        }),
+
+      setSelectedRegulation: (regulationId) =>
+        set({ selectedRegulationId: regulationId, selectedAssignments: [] }),
 
       setIsParallel: (isParallel) =>
         set({ isParallel, selectedAssignments: [] }),
@@ -96,6 +107,7 @@ export const useEvaluationStore = create<EvaluationState>()(
         localStorage.removeItem(STORAGE_KEY);
         set({
           selectedDepartmentId: null,
+          selectedRegulationId: null,
           isParallel: null,
           selectedAssignments: [],
           sessionData: null,

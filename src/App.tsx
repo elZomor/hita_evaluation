@@ -48,7 +48,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<StartPage />} />
           <Route path="/select" element={<SelectPage />} />
-          <Route path="/evaluate" element={<EvaluatePage />} />
+          <Route path="/evaluate/:sessionId" element={<EvaluatePage />} />
         </Routes>
       </AppShell>
       <InactivityModal
