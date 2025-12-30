@@ -26,7 +26,7 @@ export const useInactivityTimer = () => {
       clearTimeout(timeoutRef.current);
     }
 
-    if (location.pathname !== '/' && !showModal) {
+    if (location.pathname !== '/' && !location.pathname.startsWith('/dashboard') && !showModal) {
       timeoutRef.current = window.setTimeout(() => {
         setShowModal(true);
       }, INACTIVITY_TIMEOUT);

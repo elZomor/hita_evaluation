@@ -12,12 +12,11 @@ export const Header = () => {
   const resetAll = useEvaluationStore((state) => state.resetAll);
 
   const isStartPage = location.pathname === '/';
+  const isDashboardPage = location.pathname.startsWith('/dashboard');
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'ar' ? 'en' : 'ar';
     i18n.changeLanguage(newLang);
-    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLang;
   };
 
   const handleReset = () => {
@@ -34,7 +33,7 @@ export const Header = () => {
           </h1>
 
           <div className="flex items-center gap-2">
-            {!isStartPage && (
+            {!isStartPage && !isDashboardPage && (
               <button
                 onClick={handleReset}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"

@@ -9,7 +9,9 @@ import { InactivityModal } from './components/InactivityModal';
 import { StartPage } from './pages/StartPage';
 import { SelectPage } from './pages/SelectPage';
 import { EvaluatePage } from './pages/EvaluatePage';
+import { DashboardPage } from './pages/DashboardPage';
 import './lib/i18n/config';
+import { useTranslation } from 'react-i18next';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,10 +26,14 @@ function AppContent() {
   const { showModal, handleContinue, handleReset } = useInactivityTimer();
   const location = useLocation();
   const selectedAssignments = useEvaluationStore((state) => state.selectedAssignments);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
+    const onEvaluationRoute = location.pathname.startsWith('/evaluate');
+    if (!onEvaluationRoute) return;
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (location.pathname !== '/' && selectedAssignments.length > 0) {
+      if (selectedAssignments.length > 0) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -38,9 +44,18 @@ function AppContent() {
   }, [location.pathname, selectedAssignments.length]);
 
   useEffect(() => {
-    document.documentElement.dir = 'rtl';
-    document.documentElement.lang = 'ar';
-  }, []);
+    const updateDirection = (lng: string) => {
+      const dir = lng === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.dir = dir;
+      document.documentElement.lang = lng;
+    };
+
+    updateDirection(i18n.language);
+    i18n.on('languageChanged', updateDirection);
+    return () => {
+      i18n.off('languageChanged', updateDirection);
+    };
+  }, [i18n]);
 
   return (
     <>
@@ -49,6 +64,7 @@ function AppContent() {
           <Route path="/" element={<StartPage />} />
           <Route path="/select" element={<SelectPage />} />
           <Route path="/evaluate/:sessionId" element={<EvaluatePage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>
       </AppShell>
       <InactivityModal
