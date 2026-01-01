@@ -763,13 +763,27 @@ const CategoryQuestionItem = ({
         }`}
       >
         <div className="flex-1 pe-4">
-          <p className={`text-sm font-medium ${
+          {question.question_sub_text && (
+            <p className={`text-sm font-medium ${
+              isQuestionComplete
+                ? 'text-green-800 dark:text-green-300'
+                : 'text-slate-800 dark:text-slate-200'
+            }`}>
+              {question.question_text}
+
+              {question.is_mandatory && (
+                <span className="text-red-500 dark:text-red-400 ms-1">*</span>
+              )}
+            </p>
+          )}
+          <p className={`text-xs ${question.question_sub_text ? 'mt-0.5' : ''} ${
             isQuestionComplete
-              ? 'text-green-800 dark:text-green-300'
-              : 'text-slate-800 dark:text-slate-200'
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-gray-500 dark:text-gray-400'
           }`}>
-            {question.question_text}
-            {question.is_mandatory && (
+            <span className="text-amber-600 dark:text-amber-400 font-bold">من الآخر 👀: </span>
+            {question.question_sub_text}
+            {!question.question_sub_text && question.is_mandatory && (
               <span className="text-red-500 dark:text-red-400 ms-1">*</span>
             )}
           </p>
@@ -1289,19 +1303,36 @@ const SubjectQuestionItem = ({
             : 'bg-slate-100 dark:bg-slate-800'
         }`}
       >
-        <label className={`block text-sm font-medium w-full ${
+        {question.question_sub_text && (
+          <label className={`block text-sm font-medium w-full ${
+            isAnswered
+              ? 'text-green-800 dark:text-green-300'
+              : 'text-slate-800 dark:text-slate-200'
+          }`}>
+            {question.question_text}
+            {question.is_mandatory && (
+              <span className="text-red-500 dark:text-red-400 ms-1">*</span>
+            )}
+            {isAnswered && (
+              <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
+            )}
+          </label>
+        )}
+        <p className={`text-xs ${question.question_sub_text ? 'mt-1' : ''} ${
           isAnswered
-            ? 'text-green-800 dark:text-green-300'
-            : 'text-slate-800 dark:text-slate-200'
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-gray-500 dark:text-gray-400'
         }`}>
-          {question.question_text}
-          {question.is_mandatory && (
+          <span className="text-amber-600 dark:text-amber-400 font-bold">من الآخر 👀: </span>
+          {question.question_sub_text}
+
+          {!question.question_sub_text && question.is_mandatory && (
             <span className="text-red-500 dark:text-red-400 ms-1">*</span>
           )}
-          {isAnswered && (
+          {!question.question_sub_text && isAnswered && (
             <span className="ms-2 text-green-600 dark:text-green-400">✓</span>
           )}
-        </label>
+        </p>
       </div>
 
       {/* Yes/No Question */}

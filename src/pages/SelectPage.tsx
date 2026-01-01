@@ -7,8 +7,15 @@ import { motion } from 'framer-motion';
 import { apiClient } from '../lib/api/client';
 import { useEvaluationStore } from '../store/useEvaluationStore';
 import { SelectableCourseRow } from '../components/SelectableCourseRow';
+import { SubjectAccordion } from '../components/SubjectAccordion';
 import { SelectedItemsPanel } from '../components/SelectedItemsPanel';
-import type { SelectedAssignment } from '../types';
+import type { SelectedAssignment, CourseAssignment } from '../types';
+
+interface GroupedSubject {
+  subjectName_ar: string;
+  subjectName_en: string;
+  professors: CourseAssignment[];
+}
 
 export const SelectPage = () => {
   const navigate = useNavigate();
@@ -109,6 +116,26 @@ export const SelectPage = () => {
         item.professorName_en.toLowerCase().includes(query)
     );
   }, [allItems, searchQuery]);
+
+  // Group items by subject name (to combine subjects with multiple professors)
+  const groupedSubjects = useMemo(() => {
+    const groups: Record<string, GroupedSubject> = {};
+
+    filteredItems.forEach((item) => {
+      // Group by subject name (normalized) to combine duplicates
+      const key = `${item.courseName_ar.trim()}_${item.courseName_en.trim()}`;
+      if (!groups[key]) {
+        groups[key] = {
+          subjectName_ar: item.courseName_ar,
+          subjectName_en: item.courseName_en,
+          professors: [],
+        };
+      }
+      groups[key].professors.push(item);
+    });
+
+    return Object.values(groups);
+  }, [filteredItems]);
 
   const handleToggleAssignment = (assignment: SelectedAssignment) => {
     toggleAssignment(assignment);
@@ -296,22 +323,38 @@ export const SelectPage = () => {
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
                 </div>
-              ) : filteredItems.length === 0 ? (
+              ) : groupedSubjects.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   {searchQuery ? t('select.noResults') : t('select.noCourses')}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredItems.map((item) => {
-                    const isSelected = selectedAssignments.some(
-                      (a) => a.assignmentId === item.assignmentId
-                    );
+                  {groupedSubjects.map((subject) => {
+                    // If subject has only one professor, show simple row
+                    if (subject.professors.length === 1) {
+                      const item = subject.professors[0];
+                      const isSelected = selectedAssignments.some(
+                        (a) => a.assignmentId === item.assignmentId
+                      );
+                      return (
+                        <SelectableCourseRow
+                          key={item.assignmentId}
+                          assignment={item}
+                          isSelected={isSelected}
+                          onToggle={() => handleToggleAssignment(item)}
+                        />
+                      );
+                    }
+
+                    // If subject has multiple professors, show accordion
                     return (
-                      <SelectableCourseRow
-                        key={item.assignmentId}
-                        assignment={item}
-                        isSelected={isSelected}
-                        onToggle={() => handleToggleAssignment(item)}
+                      <SubjectAccordion
+                        key={subject.professors[0].courseId}
+                        subjectName_ar={subject.subjectName_ar}
+                        subjectName_en={subject.subjectName_en}
+                        professors={subject.professors}
+                        selectedAssignments={selectedAssignments}
+                        onToggle={handleToggleAssignment}
                       />
                     );
                   })}

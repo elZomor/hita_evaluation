@@ -120,6 +120,7 @@ export interface SelectedAssignment extends CourseAssignment {
 export interface SessionQuestion {
   id: number;
   question_text: string;
+  question_sub_text: string | null;
   question_type: 'R' | 'YN' | 'S' | 'T';
   is_mandatory: boolean;
   category_id: number | null;

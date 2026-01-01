@@ -47,6 +47,8 @@ const resources = {
         noResults: 'لا توجد نتائج للبحث',
         noCourses: 'لا توجد مقررات لهذا القسم',
         scrollToTop: 'العودة للأعلى',
+        professorsCount: '{{count}} أستاذ',
+        selectedCount: '{{count}} محدد',
       },
       category: {
         required: 'إجباري',
@@ -214,6 +216,8 @@ const resources = {
         noResults: 'No results found',
         noCourses: 'No courses available for this department',
         scrollToTop: 'Scroll to Top',
+        professorsCount: '{{count}} professors',
+        selectedCount: '{{count}} selected',
       },
       category: {
         required: 'Required',
