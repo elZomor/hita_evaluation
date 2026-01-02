@@ -24,8 +24,9 @@ const resources = {
         all: 'الكل',
       },
       start: {
-        title: 'استبيان الطلاب',
-        subtitle: 'مرحباً بك في نظام استبيان الطلاب',
+        title: '🤡 استبيان الطلاب 🤡',
+        nav_title: 'استبيان الطلاب',
+        subtitle: 'هات م الآخر 👀',
         startButton: 'ابدأ الآن',
       },
       select: {
@@ -193,8 +194,9 @@ const resources = {
         all: 'All',
       },
       start: {
-        title: 'Professor Evaluation',
-        subtitle: 'Welcome to the Professor Evaluation System',
+        title: 'Curriculum Evaluation',
+        nav_title: 'Curriculum Evaluation',
+        subtitle: 'Welcome to the Curriculum Evaluation System',
         startButton: 'Start Now',
       },
       select: {

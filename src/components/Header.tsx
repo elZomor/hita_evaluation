@@ -30,7 +30,7 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            {t('start.title')}
+            {t('start.nav_title')}
           </h1>
 
           <div className="flex items-center gap-2">
@@ -46,13 +46,13 @@ export const Header = () => {
               </button>
             )}
 
-            <button
-              onClick={toggleLanguage}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
-              aria-label={t('common.language')}
-            >
-              <FlagIcon variant={i18n.language === 'ar' ? 'uk' : 'eg'} />
-            </button>
+            {/*<button*/}
+            {/*  onClick={toggleLanguage}*/}
+            {/*  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"*/}
+            {/*  aria-label={t('common.language')}*/}
+            {/*>*/}
+            {/*  <FlagIcon variant={i18n.language === 'ar' ? 'uk' : 'eg'} />*/}
+            {/*</button>*/}
 
             <button
               onClick={toggleTheme}
