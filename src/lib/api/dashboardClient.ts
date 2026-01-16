@@ -72,6 +72,9 @@ export const dashboardClient = {
     if (filters?.regulationIds?.length) {
       filters.regulationIds.forEach(id => params.append('regulation_ids', id));
     }
+    if (filters?.isParallel !== undefined && filters?.isParallel !== null) {
+      params.append('is_parallel', String(filters.isParallel));
+    }
 
     const queryString = params.toString();
     const url = `${API_BASE_URL}/hita_evaluation/dashboard/answers${queryString ? `?${queryString}` : ''}`;

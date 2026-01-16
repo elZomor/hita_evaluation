@@ -8,6 +8,7 @@ export interface EvaluationAnswer {
   professor_id: string
   professor_name: string
   regulation?: string
+  is_parallel: boolean
   cohort_id?: string
   question_id: string
   question_text: string
@@ -56,6 +57,7 @@ export interface FilterParams {
   professorIds?: string[]
   regulationIds?: string[]
   cohortIds?: string[]
+  isParallel?: boolean | null
 }
 
 export interface DashboardSemester {

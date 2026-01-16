@@ -183,7 +183,8 @@ export function FilterBar({
     (filters.departmentIds && filters.departmentIds.length > 0) ||
     (filters.courseIds && filters.courseIds.length > 0) ||
     (filters.professorIds && filters.professorIds.length > 0) ||
-    (filters.regulationIds && filters.regulationIds.length > 0);
+    (filters.regulationIds && filters.regulationIds.length > 0) ||
+    (filters.isParallel !== null && filters.isParallel !== undefined);
 
   const getName = (id: string, type: 'department' | 'course' | 'professor' | 'semester' | 'regulation') => {
     const lang = language === 'ar' ? 'name_ar' : 'name_en';
@@ -265,7 +266,7 @@ export function FilterBar({
   return (
     <Card className="p-4">
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <DropdownFilter
             label={t('dashboard.semester')}
             options={semesterOptions}
@@ -287,6 +288,28 @@ export function FilterBar({
             disabled={regulationOptions.length === 0}
             emptyLabel={t('common.noData')}
           />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-muted-foreground">
+              {t('dashboard.programType')}
+            </label>
+            <select
+              value={filters.isParallel === null || filters.isParallel === undefined ? '' : String(filters.isParallel)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '') {
+                  updateFilter('isParallel', null);
+                } else {
+                  updateFilter('isParallel', value === 'true');
+                }
+              }}
+              className="flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <option value="">{t('common.all')}</option>
+              <option value="false">{t('dashboard.creditHours')}</option>
+              <option value="true">{t('dashboard.parallelEducation')}</option>
+            </select>
+          </div>
 
           <DropdownFilter
             label={t('dashboard.department')}
@@ -373,6 +396,18 @@ export function FilterBar({
                 </button>
               </Badge>
             ))}
+            {filters.isParallel !== null && filters.isParallel !== undefined && (
+              <Badge variant="secondary" className="gap-1">
+                {filters.isParallel ? t('dashboard.parallelEducation') : t('dashboard.creditHours')}
+                <button
+                  onClick={() => clearFilter('isParallel')}
+                  className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={t('dashboard.clearSelection')}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
             <Button
               variant="outline"
               size="sm"
