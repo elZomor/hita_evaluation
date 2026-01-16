@@ -48,8 +48,8 @@ export function Heatmap({
                   {t('table.professor')}
                 </th>
                 {categoryColumns.map((cat) => (
-                  <th key={cat.label} className="px-2 py-2 text-center">
-                    {cat.label}
+                  <th key={cat.label} className="px-2 py-2 text-center max-w-[120px]" title={cat.label}>
+                    <span className="block truncate">{cat.label}</span>
                   </th>
                 ))}
               </tr>
@@ -62,9 +62,10 @@ export function Heatmap({
                   className="cursor-pointer border-b transition-colors hover:bg-accent"
                 >
                   <td
-                    className={`sticky px-2 py-2 font-medium ${isRTL ? 'right-0 text-right' : 'left-0 text-left'} bg-card`}
+                    className={`sticky px-2 py-2 font-medium max-w-[180px] ${isRTL ? 'right-0 text-right' : 'left-0 text-left'} bg-card`}
+                    title={prof.professorName}
                   >
-                    {prof.professorName}
+                    <span className="block truncate">{prof.professorName}</span>
                   </td>
                   {categoryColumns.map((cat) => {
                     const score =

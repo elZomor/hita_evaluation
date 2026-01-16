@@ -65,7 +65,11 @@ export function ProfessorLeaderboard({
                   className="cursor-pointer border-b transition-colors hover:bg-accent"
                 >
                   <td className="py-3">{formatInteger(index + 1)}</td>
-                  <td className="py-3">{prof.professorName}</td>
+                  <td className="py-3 max-w-[200px]">
+                    <span className="block truncate" title={prof.professorName}>
+                      {prof.professorName}
+                    </span>
+                  </td>
                   <td className="py-3">
                     <Badge
                       variant={
@@ -80,9 +84,12 @@ export function ProfessorLeaderboard({
                     </Badge>
                   </td>
                   <td className="py-3">{formatInteger(prof.responsesCount)}</td>
-                  <td className="py-3">
+                  <td className="py-3 max-w-[150px]">
                     {prof.worstCategory && (
-                      <span className="text-muted-foreground">
+                      <span
+                        className="block truncate text-muted-foreground"
+                        title={`${prof.worstCategory.name} (${formatDecimal(prof.worstCategory.score, 2)})`}
+                      >
                         {prof.worstCategory.name} (
                         {formatDecimal(prof.worstCategory.score, 2)})
                       </span>

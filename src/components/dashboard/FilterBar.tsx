@@ -89,6 +89,7 @@ const DropdownFilter = ({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
+        title={displayText}
         className="flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
       >
         <span className="truncate text-left">{displayText}</span>
@@ -117,7 +118,7 @@ const DropdownFilter = ({
               filteredOptions.map((option) => (
                 <label
                   key={option.value}
-                  className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  className="group relative flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                 >
                   <input
                     type="checkbox"
@@ -126,6 +127,9 @@ const DropdownFilter = ({
                     className="h-4 w-4 rounded border-input"
                   />
                   <span className="truncate">{option.label}</span>
+                  <span className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-xs whitespace-normal rounded bg-foreground px-2 py-1 text-xs text-background shadow-lg group-hover:block">
+                    {option.label}
+                  </span>
                 </label>
               ))
             )}
@@ -344,7 +348,7 @@ export function FilterBar({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">{t('dashboard.filters')}:</span>
             {filters.departmentIds?.map((id) => (
-              <Badge key={id} variant="secondary" className="gap-1">
+              <Badge key={id} variant="secondary" className="gap-1" title={getName(id, 'department')}>
                 {getName(id, 'department')}
                 <button
                   onClick={() => clearFilter('departmentIds')}
@@ -356,7 +360,7 @@ export function FilterBar({
               </Badge>
             ))}
             {filters.courseIds?.map((id) => (
-              <Badge key={id} variant="secondary" className="gap-1">
+              <Badge key={id} variant="secondary" className="gap-1" title={getName(id, 'course')}>
                 {getName(id, 'course')}
                 <button
                   onClick={() => clearFilter('courseIds')}
@@ -368,7 +372,7 @@ export function FilterBar({
               </Badge>
             ))}
             {filters.professorIds?.map((id) => (
-              <Badge key={id} variant="secondary" className="gap-1">
+              <Badge key={id} variant="secondary" className="gap-1" title={getName(id, 'professor')}>
                 {getName(id, 'professor')}
                 <button
                   onClick={() => clearFilter('professorIds')}
@@ -380,7 +384,7 @@ export function FilterBar({
               </Badge>
             ))}
             {filters.regulationIds?.map((id) => (
-              <Badge key={id} variant="secondary" className="gap-1">
+              <Badge key={id} variant="secondary" className="gap-1" title={getName(id, 'regulation')}>
                 {getName(id, 'regulation')}
                 <button
                   onClick={() => clearFilter('regulationIds')}
@@ -392,7 +396,7 @@ export function FilterBar({
               </Badge>
             ))}
             {filters.programTypes?.map((value) => (
-              <Badge key={value} variant="secondary" className="gap-1">
+              <Badge key={value} variant="secondary" className="gap-1" title={value === 'true' ? t('dashboard.parallelEducation') : t('dashboard.creditHours')}>
                 {value === 'true' ? t('dashboard.parallelEducation') : t('dashboard.creditHours')}
                 <button
                   onClick={() => clearFilter('programTypes')}
