@@ -72,8 +72,10 @@ export const dashboardClient = {
     if (filters?.regulationIds?.length) {
       filters.regulationIds.forEach(id => params.append('regulation_ids', id));
     }
-    if (filters?.isParallel !== undefined && filters?.isParallel !== null) {
-      params.append('is_parallel', String(filters.isParallel));
+    // Only filter if exactly one program type is selected
+    // If both or none selected, show all (no filter)
+    if (filters?.programTypes?.length === 1) {
+      params.append('is_parallel', filters.programTypes[0]);
     }
 
     const queryString = params.toString();

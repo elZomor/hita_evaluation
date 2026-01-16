@@ -57,7 +57,7 @@ export interface FilterParams {
   professorIds?: string[]
   regulationIds?: string[]
   cohortIds?: string[]
-  isParallel?: boolean | null
+  programTypes?: string[]
 }
 
 export interface DashboardSemester {
