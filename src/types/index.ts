@@ -3,6 +3,15 @@ export interface Department {
   label: string;
 }
 
+export interface Semester {
+  id: string;
+  year: number;
+  type: string;
+  type_display: string;
+  label: string;
+  is_current: boolean;
+}
+
 export interface Regulation {
   id: number;
   name: string;

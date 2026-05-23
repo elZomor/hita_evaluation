@@ -13,12 +13,14 @@ interface EvaluationState {
   selectedDepartmentId: string | null;
   selectedRegulationId: number | null;
   isParallel: boolean | null;
+  selectedSemesterId: string | null;
   selectedAssignments: SelectedAssignment[];
   sessionData: StartSessionResponse | null;
   answers: AnswerMap;
   setSelectedDepartment: (departmentId: string | null) => void;
   setSelectedRegulation: (regulationId: number | null) => void;
   setIsParallel: (isParallel: boolean | null) => void;
+  setSelectedSemester: (semesterId: string | null) => void;
   toggleAssignment: (assignment: SelectedAssignment) => void;
   clearAssignments: () => void;
   setSessionData: (data: StartSessionResponse) => void;
@@ -41,6 +43,7 @@ export const useEvaluationStore = create<EvaluationState>()(
       selectedDepartmentId: null,
       selectedRegulationId: null,
       isParallel: null,
+      selectedSemesterId: null,
       selectedAssignments: [],
       sessionData: null,
       answers: {},
@@ -51,13 +54,17 @@ export const useEvaluationStore = create<EvaluationState>()(
           selectedAssignments: [],
           isParallel: null,
           selectedRegulationId: null,
+          selectedSemesterId: null,
         }),
 
       setSelectedRegulation: (regulationId) =>
-        set({ selectedRegulationId: regulationId, selectedAssignments: [] }),
+        set({ selectedRegulationId: regulationId, selectedAssignments: [], selectedSemesterId: null }),
 
       setIsParallel: (isParallel) =>
-        set({ isParallel, selectedAssignments: [] }),
+        set({ isParallel, selectedAssignments: [], selectedSemesterId: null }),
+
+      setSelectedSemester: (semesterId) =>
+        set({ selectedSemesterId: semesterId, selectedAssignments: [] }),
 
       toggleAssignment: (assignment) =>
         set((state) => {
@@ -112,6 +119,7 @@ export const useEvaluationStore = create<EvaluationState>()(
           selectedDepartmentId: null,
           selectedRegulationId: null,
           isParallel: null,
+          selectedSemesterId: null,
           selectedAssignments: [],
           sessionData: null,
           answers: {},

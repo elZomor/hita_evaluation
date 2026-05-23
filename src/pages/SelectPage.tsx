@@ -24,11 +24,13 @@ export const SelectPage = () => {
   const selectedDepartmentId = useEvaluationStore((state) => state.selectedDepartmentId);
   const selectedRegulationId = useEvaluationStore((state) => state.selectedRegulationId);
   const isParallel = useEvaluationStore((state) => state.isParallel);
+  const selectedSemesterId = useEvaluationStore((state) => state.selectedSemesterId);
   const selectedAssignments = useEvaluationStore((state) => state.selectedAssignments);
   const sessionData = useEvaluationStore((state) => state.sessionData);
   const setSelectedDepartment = useEvaluationStore((state) => state.setSelectedDepartment);
   const setSelectedRegulation = useEvaluationStore((state) => state.setSelectedRegulation);
   const setIsParallel = useEvaluationStore((state) => state.setIsParallel);
+  const setSelectedSemester = useEvaluationStore((state) => state.setSelectedSemester);
   const toggleAssignment = useEvaluationStore((state) => state.toggleAssignment);
   const setSessionData = useEvaluationStore((state) => state.setSessionData);
   const resetAll = useEvaluationStore((state) => state.resetAll);
@@ -72,16 +74,23 @@ export const SelectPage = () => {
     queryFn: apiClient.getRegulations,
   });
 
+  // Fetch semesters on page load
+  const { data: semesters, isLoading: loadingSemesters } = useQuery({
+    queryKey: ['semesters'],
+    queryFn: apiClient.getSemesters,
+  });
+
   // Fetch courses only when all filters are selected (uses backend filtering)
   const { data: courses, isLoading: loadingCourses } = useQuery({
-    queryKey: ['courses', selectedDepartmentId, selectedRegulationId, isParallel],
+    queryKey: ['courses', selectedDepartmentId, selectedRegulationId, isParallel, selectedSemesterId],
     queryFn: () =>
       apiClient.getCourses({
         department: selectedDepartmentId!,
         regulation_id: selectedRegulationId!,
         is_parallel: isParallel!,
+        semester_id: selectedSemesterId!,
       }),
-    enabled: !!selectedDepartmentId && !!selectedRegulationId && isParallel !== null,
+    enabled: !!selectedDepartmentId && !!selectedRegulationId && isParallel !== null && !!selectedSemesterId,
   });
 
   // Start session mutation
@@ -153,7 +162,8 @@ export const SelectPage = () => {
       selectedAssignments.length === 0 ||
       !selectedDepartmentId ||
       !selectedRegulationId ||
-      isParallel === null
+      isParallel === null ||
+      !selectedSemesterId
     )
       return;
 
@@ -170,7 +180,7 @@ export const SelectPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (isCheckingSession || loadingDepts || loadingRegulations) {
+  if (isCheckingSession || loadingDepts || loadingRegulations || loadingSemesters) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-4">
@@ -266,6 +276,27 @@ export const SelectPage = () => {
           </div>
         )}
 
+        {/* Semester Selection */}
+        {selectedDepartmentId && selectedRegulationId && isParallel !== null && (
+          <div className="max-w-md">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('select.selectSemester')}
+            </label>
+            <select
+              value={selectedSemesterId || ''}
+              onChange={(e) => setSelectedSemester(e.target.value || null)}
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500 transition-colors"
+            >
+              <option value="">{t('select.selectSemester')}</option>
+              {semesters?.map((sem) => (
+                <option key={sem.id} value={sem.id}>
+                  {sem.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {!selectedDepartmentId && (
           <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
             <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -292,9 +323,18 @@ export const SelectPage = () => {
             </p>
           </div>
         )}
+
+        {selectedDepartmentId && selectedRegulationId && isParallel !== null && !selectedSemesterId && (
+          <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              {t('select.semesterRequired')}
+            </p>
+          </div>
+        )}
       </div>
 
-      {selectedDepartmentId && selectedRegulationId && isParallel !== null && (
+      {selectedDepartmentId && selectedRegulationId && isParallel !== null && !!selectedSemesterId && (
         <>
           {/* Mobile: Selected items at top */}
           <div className="lg:hidden">

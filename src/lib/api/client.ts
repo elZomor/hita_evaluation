@@ -1,6 +1,7 @@
 import type {
   Department,
   Regulation,
+  Semester,
   Course,
   CourseAssignment,
   StartSessionRequest,
@@ -37,15 +38,26 @@ export const apiClient = {
     return result.data;
   },
 
+  getSemesters: async (): Promise<Semester[]> => {
+    const response = await fetch(`${API_BASE_URL}/hita_evaluation/semesters`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch semesters');
+    }
+    const result: ApiResponse<Semester[]> = await response.json();
+    return result.data;
+  },
+
   getCourses: async (filters?: {
     department?: string;
     regulation_id?: number;
     is_parallel?: boolean;
+    semester_id?: string;
   }): Promise<CourseAssignment[]> => {
     const params = new URLSearchParams();
     if (filters?.department) params.append('department', filters.department);
     if (filters?.regulation_id) params.append('regulation_id', String(filters.regulation_id));
     if (filters?.is_parallel !== undefined) params.append('is_parallel', String(filters.is_parallel));
+    if (filters?.semester_id) params.append('semester_id', filters.semester_id);
 
     const queryString = params.toString();
     const url = `${API_BASE_URL}/hita_evaluation/courses${queryString ? `?${queryString}` : ''}`;
